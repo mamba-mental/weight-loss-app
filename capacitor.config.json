@@ -1,5 +1,6 @@
 {
   "appId": "link.ui2.bf",
-  "appName": "Bodyfat Roadmap",
-  "webDir": "bf"
+  "appName": "Weight Loss Predictor",
+  "webDir": "public",
+  "bundledWebRuntime": false
 }

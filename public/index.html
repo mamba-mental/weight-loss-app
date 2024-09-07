@@ -2,17 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Weight Loss Predictor</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #streamlit-app {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-    <div id="streamlit-app"></div>
-    <script src="https://streamlit.io/static/streamlit.js"></script>
-    <script>
-        Streamlit.loadApp({
-            url: "https://your-app-url.streamlit.app",
-            height: "100%"
-        });
-    </script>
+    <iframe id="streamlit-app" src="https://bf-estimator.streamlit.app"></iframe>
 </body>
 </html>
