@@ -8,58 +8,46 @@ import io
 
 # Custom CSS for styling
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
+
 st.markdown("""
-    <style>
-    .stApp {
-        background-color: black;
-        color: gold;
+<style>
+    .reportview-container .main .block-container {
+        max-width: 1200px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-    .stSelectbox, .stNumberInput, .stTextInput, .stDateInput {
-        color: gold;
+    h1 {
+        color: #4A4A4A;
     }
-    .stDataFrame {
-        font-size: 12px;
+    h2 {
+        color: #6A6A6A;
     }
-    .stButton > button {
-        color: black;
-        background-color: gold;
-        border-color: gold;
-    }
-    .stHeader {
-        background-color: #1f1f1f;
-        padding: 1rem;
-        border-radius: 5px;
-    }
-    .stSubheader {
-        color: gold;
-        font-size: 1.5rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
 # PDF generation function
 class PDF(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 15)
+        self.set_font('Garamond', 'B', 15)
         self.set_text_color(0, 0, 0)
         self.cell(0, 10, 'Weight Loss Plan Report', 0, 1, 'C')
         self.ln(10)
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
+        self.set_font('Garamond', 'I', 8)
         self.set_text_color(128, 128, 128)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def generate_pdf(progression, gender, client_name):
     pdf = PDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
+    pdf.set_font("Garamond", "B", 16)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, f"Weight Loss Plan for {client_name}", 0, 1, "C")
     pdf.ln(10)
-    
-    pdf.set_font("Arial", "", 12)
+
+    pdf.set_font("Garamond", "", 12)
     pdf.set_text_color(64, 64, 64)
     pdf.cell(0, 10, "Weight Loss Plan Input Summary", 0, 1, "L")
     pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
@@ -68,21 +56,20 @@ def generate_pdf(progression, gender, client_name):
     pdf.cell(0, 10, f"Goal Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
     pdf.cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
     pdf.cell(0, 10, f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
-    
+
     pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("Garamond", "B", 14)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, "Weekly Progress Summary", 0, 1, "C")
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Garamond", "", 10)
     pdf.set_text_color(64, 64, 64)
-    
+
     col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
     headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
-    
     for i, header in enumerate(headers):
         pdf.cell(col_widths[i], 10, header, 1)
     pdf.ln()
-    
+
     for i, entry in enumerate(progression):
         pdf.cell(col_widths[0], 10, str(i), 1)
         pdf.cell(col_widths[1], 10, entry['date'], 1)
@@ -93,19 +80,18 @@ def generate_pdf(progression, gender, client_name):
         pdf.cell(col_widths[6], 10, f"{entry['weekly_caloric_output']:.1f}", 1)
         pdf.cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
         pdf.ln()
-    
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, "Final Stats and Results Summary", 0, 1, "C")
-    pdf.set_font("Arial", "", 12)
-    pdf.set_text_color(64, 64, 64)
-    
+
     total_weeks = len(progression) - 1
     total_weight_loss = progression[0]['weight'] - progression[-1]['weight']
     total_bf_loss = progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']
     total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
-    
+
+    pdf.add_page()
+    pdf.set_font("Garamond", "B", 14)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, "Final Stats and Results Summary", 0, 1, "C")
+    pdf.set_font("Garamond", "", 12)
+    pdf.set_text_color(64, 64, 64)
     pdf.cell(0, 10, f"Duration: {total_weeks} weeks", 0, 1)
     pdf.cell(0, 10, f"Total Weight Loss: {total_weight_loss:.1f} lbs", 0, 1)
     pdf.cell(0, 10, f"Total Body Fat Reduction: {total_bf_loss:.1f}%", 0, 1)
@@ -116,7 +102,7 @@ def generate_pdf(progression, gender, client_name):
     pdf.cell(0, 10, f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories", 0, 1)
     pdf.cell(0, 10, f"Final TDEE: {progression[-1]['tdee']:.0f} calories", 0, 1)
     pdf.cell(0, 10, f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories", 0, 1)
-    
+
     return pdf.output(dest='S').encode('latin-1')
 
 # Main app
@@ -253,7 +239,7 @@ if st.button("Calculate"):
     # Generate PDF
     client_name = f"{first_name} {last_name}"
     pdf_bytes = generate_pdf(progression, gender.lower(), client_name)
-    
+
     # Create download button
     st.download_button(
         label="Download PDF Report",
@@ -271,4 +257,8 @@ if st.button("Calculate"):
 
     col1, col2 = st.columns(2)
     with col1:
-        st.write
+        st.write(f"Duration: {total_weeks} weeks")
+        st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
+        st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
+        st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
+        st.write(f"Final Body Fat: {progression[-1]['body_fat_
