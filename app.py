@@ -4,6 +4,10 @@ from datetime import datetime, timedelta
 from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info
 from fpdf import FPDF
 
+# Function to calculate age
+def calculate_age(dob, current_date):
+    return current_date.year - dob.year - ((current_date.month, current_date.day) < (dob.month, dob.day))
+
 # Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 
@@ -51,26 +55,29 @@ class PDF(FPDF):
         self.set_text_color(0, 0, 0)  # Black
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-def generate_pdf(progression, gender, client_name, initial_data):
+def generate_pdf(progression, initial_data, gender, client_name):
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Times", "B", 16)
     pdf.set_text_color(0, 0, 0)  # Black
-    pdf.cell(0, 10, f"Weight Loss Plan for {client_name}", 0, 1, "C")
+    pdf.cell(0, 10, f"Personalized Weight Loss Journey Report for {client_name}", 0, 1, "C")
     pdf.ln(10)
 
     # Personal Profile
+    pdf.set_font("Times", "B", 14)
+    pdf.cell(0, 10, "1. PERSONAL PROFILE", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, "Personal Profile", 0, 1, "L")
     pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
     pdf.cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
     pdf.cell(0, 10, f"Age: {calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years", 0, 1)
     pdf.cell(0, 10, f"Gender: {gender.upper()}", 0, 1)
-    pdf.cell(0, 10, f"Height: {initial_data['height_cm']} cm", 0, 1)
+    pdf.cell(0, 10, f"Height: {initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)", 0, 1)
     pdf.cell(0, 10, f"Initial Weight: {progression[0]['weight']:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Goal Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
+    pdf.cell(0, 10, f"Goal Weight: {initial_data['goal_weight']:.1f} lbs", 0, 1)
     pdf.cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
-    pdf.cell(0, 10, f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
+    pdf.cell(0, 10, f"Goal Body Fat: {initial_data['goal_bf']:.1f}%", 0, 1)
+    pdf.cell(0, 10, f"Activity Level: {initial_data['activity_level_description']}", 0, 1)
+    pdf.cell(0, 10, f"Experience Level: {initial_data['experience_level']}", 0, 1)
 
     # Weekly Progress Summary
     pdf.add_page()
@@ -252,10 +259,16 @@ if st.button("Calculate"):
 
     # Generate PDF
     client_name = f"{first_name} {last_name}"
-    pdf_bytes = generate_pdf(progression, gender.lower(), client_name, {
+    pdf_bytes = generate_pdf(progression, {
         'dob': dob,
-        'height_cm': height_cm
-    })
+        'height_feet': feet,
+        'height_inches': inches,
+        'height_cm': height_cm,
+        'goal_weight': goal_weight,
+        'goal_bf': goal_bf,
+        'activity_level_description': activity_level,
+        'experience_level': experience_level,
+    }, gender.lower(), client_name)
 
     # Create download button
     st.download_button(
