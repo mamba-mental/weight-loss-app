@@ -6,15 +6,15 @@ from fpdf import FPDF
 import base64
 import io
 
+# Set page configuration
+st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
+
 # Load custom CSS
 def load_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 load_css("styles.css")
-
-# Set page configuration
-st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 
 # PDF generation function
 class PDF(FPDF):
