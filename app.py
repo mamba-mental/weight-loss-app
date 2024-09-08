@@ -3,8 +3,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info
 from fpdf import FPDF
-import base64
-import io
 
 # Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
@@ -53,7 +51,7 @@ class PDF(FPDF):
         self.set_text_color(0, 0, 0)  # Black
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-def generate_pdf(progression, gender, client_name):
+def generate_pdf(progression, gender, client_name, initial_data):
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Times", "B", 16)
@@ -61,22 +59,24 @@ def generate_pdf(progression, gender, client_name):
     pdf.cell(0, 10, f"Weight Loss Plan for {client_name}", 0, 1, "C")
     pdf.ln(10)
 
+    # Personal Profile
     pdf.set_font("Times", "", 12)
-    pdf.set_text_color(0, 0, 0)  # Black
-    pdf.cell(0, 10, "Weight Loss Plan Input Summary", 0, 1, "L")
+    pdf.cell(0, 10, "Personal Profile", 0, 1, "L")
     pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
     pdf.cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
+    pdf.cell(0, 10, f"Age: {calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years", 0, 1)
+    pdf.cell(0, 10, f"Gender: {gender.upper()}", 0, 1)
+    pdf.cell(0, 10, f"Height: {initial_data['height_cm']} cm", 0, 1)
     pdf.cell(0, 10, f"Initial Weight: {progression[0]['weight']:.1f} lbs", 0, 1)
     pdf.cell(0, 10, f"Goal Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
     pdf.cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
     pdf.cell(0, 10, f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
 
+    # Weekly Progress Summary
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.set_text_color(0, 0, 0)  # Black
     pdf.cell(0, 10, "Weekly Progress Summary", 0, 1, "C")
     pdf.set_font("Times", "", 10)
-    pdf.set_text_color(0, 0, 0)  # Black
 
     col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
     headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
@@ -95,12 +95,11 @@ def generate_pdf(progression, gender, client_name):
         pdf.cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
         pdf.ln()
 
+    # Final Stats Summary
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.set_text_color(0, 0, 0)  # Black
     pdf.cell(0, 10, "Final Stats and Results Summary", 0, 1, "C")
     pdf.set_font("Times", "", 12)
-    pdf.set_text_color(0, 0, 0)  # Black
 
     total_weeks = len(progression) - 1
     total_weight_loss = progression[0]['weight'] - progression[-1]['weight']
@@ -253,7 +252,10 @@ if st.button("Calculate"):
 
     # Generate PDF
     client_name = f"{first_name} {last_name}"
-    pdf_bytes = generate_pdf(progression, gender.lower(), client_name)
+    pdf_bytes = generate_pdf(progression, gender.lower(), client_name, {
+        'dob': dob,
+        'height_cm': height_cm
+    })
 
     # Create download button
     st.download_button(

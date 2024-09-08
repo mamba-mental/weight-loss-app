@@ -42,7 +42,7 @@ def estimate_neat(job_activity, leisure_activity):
 # Adjust body composition based on resistance training and protein intake
 def adjust_body_composition(fat_loss, lean_loss, resistance_training, protein_intake, weight):
     if resistance_training:
-        lean_loss *= 0.8  # Optimize protein and lean retention
+        lean_loss *= 0.8 # Optimize protein and lean retention
     adjusted_fat_loss = fat_loss * 0.9
     adjusted_lean_loss = lean_loss * 0.1
     return adjusted_fat_loss, adjusted_lean_loss
@@ -60,8 +60,8 @@ def calculate_tdee(weight, age, gender, activity_level, height_cm, is_athlete, p
     rmr = calculate_rmr(weight, age, gender, height_cm, is_athlete)
     activity_factors = [1.2, 1.375, 1.55, 1.725, 1.9]
     tdee = rmr * activity_factors[activity_level - 1]
-    tdee += estimate_tef(protein_intake)  # Add thermic effect of food
-    tdee += estimate_neat(job_activity, leisure_activity)  # Add NEAT
+    tdee += estimate_tef(protein_intake) # Add thermic effect of food
+    tdee += estimate_neat(job_activity, leisure_activity) # Add NEAT
     return tdee
 
 # Calculate the amount of fat loss required to reach the goal body fat percentage
@@ -75,14 +75,14 @@ def calculate_fat_loss_required(current_weight, current_bf, goal_bf):
 def calculate_metabolic_adaptation(week, current_bf, is_bodybuilder):
     # Base adaptation calculation
     base_adaptation = max(0.85, 1 - (week / 300))
-    
+
     # Adjust adaptation based on current body fat percentage
     bf_factor = max(0.9, 1 - (30 - current_bf) / 100)
-    
+
     # More aggressive adaptation for bodybuilders
     if is_bodybuilder:
         base_adaptation = max(0.80, 1 - (week / 200))
-    
+
     return base_adaptation * bf_factor
 
 # Function to adjust caloric output based on TDEE and daily calorie intake
@@ -132,7 +132,7 @@ def estimate_muscle_gain(current_weight, training_frequency, training_volume, in
         'Elite (10+ years)': 0.0025
     }
 
-    base_rate = gain_rates.get(experience_level, 0.0075)  # Default to intermediate if not specified
+    base_rate = gain_rates.get(experience_level, 0.0075) # Default to intermediate if not specified
 
     # Adjust rate based on age, gender, etc.
     age_multiplier = 1.0 if age < 30 else (0.8 if age < 40 else 0.6)
@@ -142,7 +142,7 @@ def estimate_muscle_gain(current_weight, training_frequency, training_volume, in
     protein_multiplier = min(protein_intake / (current_weight * 1.6), 1.25)
 
     monthly_gain_percentage = base_rate * age_multiplier * gender_multiplier * frequency_multiplier * volume_intensity_multiplier * protein_multiplier
-    
+
     # Increase muscle gain for bodybuilders (simulating PED use)
     if is_bodybuilder and experience_level in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']:
         monthly_gain_percentage *= 2.5
@@ -160,13 +160,13 @@ def get_body_fat_info(gender, body_fat_percentage):
         {"name": "High Body Fat", "men": 29, "women": 37, "time": "6-12 months", "description": "Excess fat all around, round physique"},
         {"name": "Obese", "men": float('inf'), "women": float('inf'), "time": "12+ months", "description": "Significant excess fat all around"}
     ]
-    
+
     threshold_key = "men" if gender.lower() == 'm' else "women"
-    
+
     for category in categories:
         if body_fat_percentage < category[threshold_key]:
             return category["name"], category["time"], category["description"]
-    
+
     return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
 
 # Predict weight loss progression over time based on initial parameters
@@ -178,7 +178,7 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
 
     for week in range(weeks + 1):
         age = calculate_age(dob, start_date + datetime.timedelta(weeks=week))
-        rmr = calculate_rmr(current_weight, age, gender, height_cm, is_athlete)
+        rmr = calculate_rmr(current_weight, age, gender, height_cm, is_athlete)  # Add this line
         tdee = calculate_tdee(current_weight, age, gender, activity_level, height_cm, is_athlete, daily_protein_intake, job_activity, leisure_activity)
         metabolic_adaptation = calculate_metabolic_adaptation(week, current_bf, is_bodybuilder)
         adapted_tdee = tdee * metabolic_adaptation
@@ -195,7 +195,7 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
             weekly_deficit_required = weekly_fat_loss_required * 3500
 
             daily_deficit_required = weekly_deficit_required / 7
-            min_calories = max(adapted_tdee / 3, 1000)  # Ensure not below 1/3 of TDEE or 1000 calories
+            min_calories = max(adapted_tdee / 3, 1000) # Ensure not below 1/3 of TDEE or 1000 calories
             daily_calorie_intake = max(adapted_tdee - daily_deficit_required, min_calories)
 
         weekly_caloric_output = calculate_weekly_caloric_output(adapted_tdee, daily_calorie_intake)
@@ -214,7 +214,7 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
         current_bf = (current_fat_mass / current_weight) * 100
 
         total_weight_lost = initial_weight - current_weight
-        
+
         progression.append({
             'date': (start_date + datetime.timedelta(weeks=week)).strftime("%m%d%y"),
             'weight': current_weight,
@@ -225,12 +225,13 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
             'total_weight_lost': total_weight_lost,
             'lean_mass': current_lean_mass,
             'fat_mass': current_fat_mass,
-            'muscle_gain': muscle_gain
+            'muscle_gain': muscle_gain,
+            'rmr': rmr  # Add this line
         })
         
         if current_bf <= goal_bf and current_weight <= goal_weight:
             break
-    
+
     return progression
 
 def get_float_input(prompt):
@@ -268,7 +269,124 @@ def get_experience_level_input(prompt):
         except ValueError:
             print(f"Invalid input. Please enter a number between 1 and {len(levels)}.")
 
-# Run user interaction to get inputs and predict weight loss
+# Function to generate a comprehensive report
+def generate_comprehensive_report(progression, initial_data):
+    initial_entry = progression[0]
+    final_entry = progression[-1]
+    total_weeks = len(progression) - 1
+
+    # Calculate additional metrics
+    total_weight_loss = initial_entry['weight'] - final_entry['weight']
+    total_bf_loss = initial_entry['body_fat_percentage'] - final_entry['body_fat_percentage']
+    avg_weekly_loss = total_weight_loss / total_weeks
+    total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
+    adaptation_percentage = (1 - final_entry['tdee'] / initial_entry['tdee']) * 100
+    lean_mass_preserved = (final_entry['lean_mass'] / initial_entry['lean_mass']) * 100
+    avg_muscle_gain = total_muscle_gain / total_weeks
+
+    # Generate the report
+    report = f"""
+======================================================
+                 YOUR PERSONALIZED 
+           WEIGHT LOSS JOURNEY REPORT
+======================================================
+
+Dear Client,
+
+We've analyzed your data using our advanced weight loss prediction model. Here's a comprehensive breakdown of your journey:
+
+1. PERSONAL PROFILE
+------------------------------------------------------
+Start Date: {initial_entry['date']}
+End Date: {final_entry['date']}
+Age: {calculate_age(initial_data['dob'], datetime.datetime.strptime(initial_entry['date'], "%m%d%y"))} years
+Gender: {initial_data['gender']}
+Height: {initial_data['height_feet']}'{initial_data['height_inches']}" ({initial_data['height_cm']:.1f} cm)
+Initial Weight: {initial_entry['weight']:.1f} lbs
+Goal Weight: {initial_data['goal_weight']:.1f} lbs
+Initial Body Fat: {initial_entry['body_fat_percentage']:.1f}%
+Goal Body Fat: {initial_data['goal_bf']:.1f}%
+Activity Level: {initial_data['activity_level_description']}
+Experience Level: {initial_data['experience_level']}
+
+2. METABOLIC CALCULATIONS
+------------------------------------------------------
+Initial Resting Metabolic Rate (RMR): {initial_entry['rmr']:.0f} calories/day
+Initial Total Daily Energy Expenditure (TDEE): {initial_entry['tdee']:.0f} calories/day
+Thermic Effect of Food (TEF): {estimate_tef(initial_data['protein_intake']):.0f} calories/day
+Non-Exercise Activity Thermogenesis (NEAT): {estimate_neat(initial_data['job_activity'], initial_data['leisure_activity']):.0f} calories/day
+Initial Daily Calorie Intake: {initial_entry['daily_calorie_intake']:.0f} calories/day
+
+3. WORKOUT ANALYSIS
+------------------------------------------------------
+Workout Type: {initial_data['workout_type']}
+Workout Frequency: {initial_data['workout_days']} days/week
+Volume Score: {initial_data['volume_score']:.2f}
+Intensity Score: {initial_data['intensity_score']:.2f}
+Frequency Score: {initial_data['frequency_score']:.2f}
+Resistance Training: {'Yes' if initial_data['resistance_training'] else 'No'}
+Athlete Status: {'Yes' if initial_data['is_athlete'] else 'No'}
+
+4. BODY COMPOSITION ADJUSTMENTS
+------------------------------------------------------
+Initial Lean Mass: {initial_entry['lean_mass']:.1f} lbs
+Initial Fat Mass: {initial_entry['fat_mass']:.1f} lbs
+Estimated Weekly Muscle Gain: {initial_entry['muscle_gain']:.3f} lbs
+
+5. WEEKLY PROGRESS SUMMARY
+------------------------------------------------------
+{tabulate(progression, headers="keys", tablefmt="grid")}
+
+6. METABOLIC ADAPTATION
+------------------------------------------------------
+Week 1 Metabolic Adaptation: {calculate_metabolic_adaptation(1, initial_entry['body_fat_percentage'], initial_data['is_bodybuilder']):.2f}
+Final Week Metabolic Adaptation: {calculate_metabolic_adaptation(total_weeks, final_entry['body_fat_percentage'], initial_data['is_bodybuilder']):.2f}
+
+7. FINAL RESULTS
+------------------------------------------------------
+Duration: {total_weeks} weeks
+Total Weight Loss: {total_weight_loss:.1f} lbs
+Total Body Fat Reduction: {total_bf_loss:.1f}%
+Final Weight: {final_entry['weight']:.1f} lbs
+Final Body Fat: {final_entry['body_fat_percentage']:.1f}%
+Average Weekly Weight Loss: {avg_weekly_loss:.2f} lbs
+Total Muscle Gain: {total_muscle_gain:.1f} lbs
+Final Daily Calorie Intake: {final_entry['daily_calorie_intake']:.0f} calories
+Final TDEE: {final_entry['tdee']:.0f} calories
+Final Weekly Caloric Output: {final_entry['weekly_caloric_output']:.1f} calories
+
+8. BODY FAT CATEGORY PROGRESSION
+------------------------------------------------------
+Initial Category: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[0]}
+   Description: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[2]}
+   Estimated Time to Six-Pack: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[1]}
+
+Final Category: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[0]}
+   Description: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[2]}
+   Estimated Time to Six-Pack: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[1]}
+
+9. INSIGHTS AND RECOMMENDATIONS
+------------------------------------------------------
+• Your metabolic rate adapted by {adaptation_percentage:.1f}% over the course of your journey.
+• You maintained an impressive {lean_mass_preserved:.1f}% of your initial lean mass.
+• Your muscle gain rate averaged {avg_muscle_gain:.3f} lbs per week, which is {'excellent' if avg_muscle_gain > 0.5 else 'good' if avg_muscle_gain > 0.25 else 'moderate'}.
+• Based on your final body fat percentage, you're now in the {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[0]} category.
+• To maintain your results, consider a daily calorie intake of {final_entry['tdee']:.0f} calories.
+
+10. NEXT STEPS
+------------------------------------------------------
+• {'Continue with your current plan.' if final_entry['body_fat_percentage'] > initial_data['goal_bf'] else 'Consider a muscle building phase to further improve body composition.'}
+• Consider adjusting your protein intake to {final_entry['weight'] * 0.8:.0f} g/day to support lean mass.
+• Your next ideal body composition goal could be {max(final_entry['body_fat_percentage'] - 2, 5):.1f}% body fat.
+
+Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!
+
+======================================================
+            Powered by Advanced AI Analytics
+======================================================
+"""
+    return report
+
 def run_user_interaction():
     def get_date_input(prompt):
         while True:
@@ -351,88 +469,35 @@ def run_user_interaction():
 
     progression = predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_date, end_date, dob, gender, int(activity_level), height_cm, is_athlete, resistance_training, protein_intake, volume_score, intensity_score, frequency_score, job_activity, leisure_activity, experience_level, is_bodybuilder)
 
-    return progression, gender
+    initial_data = {
+        'dob': dob,
+        'gender': gender,
+        'height_feet': height_feet,
+        'height_inches': height_inches,
+        'height_cm': height_cm,
+        'goal_weight': goal_weight,
+        'goal_bf': goal_bf,
+        'activity_level_description': ["Little to no exercise", "Light exercise/sports 1-3 days/week", "Moderate exercise/sports 3-5 days/week", "Hard exercise/sports 6-7 days a week", "Very hard exercise/sports & a physical job"][int(activity_level) - 1],
+        'experience_level': experience_level,
+        'protein_intake': protein_intake,
+        'workout_type': workout_type,
+        'workout_days': workout_days,
+        'volume_score': volume_score,
+        'intensity_score': intensity_score,
+        'frequency_score': frequency_score,
+        'resistance_training': resistance_training,
+        'is_athlete': is_athlete,
+        'job_activity': job_activity,
+        'leisure_activity': leisure_activity,
+        'is_bodybuilder': is_bodybuilder
+    }
+
+    return progression, initial_data
 
 # Function to print the progress summary
-def print_summary(progression, gender):
-    print("\n" + "="*60)
-    print("Weight Loss Plan Input Summary".center(60))
-    print("="*60)
-    print(f"{'Start Date:':<25}{progression[0]['date']}")
-    print(f"{'End Date:':<25}{progression[-1]['date']}")
-    print(f"{'Initial Weight:':<25}{progression[0]['weight']:.1f} lbs")
-    print(f"{'Goal Weight:':<25}{progression[-1]['weight']:.1f} lbs")
-    print(f"{'Initial Body Fat:':<25}{progression[0]['body_fat_percentage']:.1f}%")
-    print(f"{'Goal Body Fat:':<25}{progression[-1]['body_fat_percentage']:.1f}%")
-
-    print("\n" + "="*60)
-    print("Initial Technical Calculations".center(60))
-    print("="*60)
-    print(f"{'Initial TDEE:':<25}{progression[0]['tdee']:.2f} calories")
-    print(f"{'Initial Daily Calorie Intake:':<25}{progression[0]['daily_calorie_intake']:.2f} calories")
-
-    print("\n" + "="*60)
-    print("Body Fat Percentage Reference".center(60))
-    print("="*60)
-    headers = ["Category", "Men's BF%", "Women's BF%", "Time to Six-Pack", "Description"]
-    table_data = [
-        ["Very Lean", "<10%", "<18%", "3-4 weeks", "Visible abs, vascularity, striations"],
-        ["Lean", "10-14%", "18-22%", "2-3 months", "Some muscle definition, less visible abs"],
-        ["Average", "15-19%", "23-27%", "3-4 months", "Little muscle definition, soft look"],
-        ["Above Average", "20-24%", "28-32%", "4-6 months", "No visible abs, excess fat"],
-        ["High Body Fat", "25-29%", "33-37%", "6-12 months", "Excess fat all around, round physique"],
-        ["Obese", "30%+", "38%+", "12+ months", "Significant excess fat all around"]
-    ]
-    print(tabulate(table_data, headers=headers, tablefmt="grid"))
-
-    print("\n" + "="*60)
-    print("Weekly Progress Summary".center(60))
-    print("="*60)
-    headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost", "Lean Mass (lbs)", "Fat Mass (lbs)", "Muscle Gain (lbs)", "Body Fat Category", "Time to Six-Pack", "Description"]
-    table_data = []
-    
-    for i, entry in enumerate(progression):
-        category, time_to_sixpack, description = get_body_fat_info(gender, entry['body_fat_percentage'])
-        row = [
-            i, entry['date'], f"{entry['weight']:.1f}", f"{entry['body_fat_percentage']:.1f}",
-            f"{entry['daily_calorie_intake']:.0f}", f"{entry['tdee']:.0f}",
-            f"{entry['weekly_caloric_output']:.1f}", f"{entry['total_weight_lost']:.1f}",
-            f"{entry['lean_mass']:.1f}", f"{entry['fat_mass']:.1f}", f"{entry['muscle_gain']:.3f}",
-            category, time_to_sixpack, description
-        ]
-        table_data.append(row)
-    
-    print(tabulate(table_data, headers=headers, tablefmt="grid"))
-
-    initial_entry = progression[0]
-    final_entry = progression[-1]
-    total_weeks = len(progression) - 1
-    total_weight_loss = initial_entry['weight'] - final_entry['weight']
-    total_bf_loss = initial_entry['body_fat_percentage'] - final_entry['body_fat_percentage']
-
-    print("\n" + "="*60)
-    print("Final Stats and Results Summary".center(60))
-    print("="*60)
-    print(f"{'Duration:':<30}{total_weeks} weeks")
-    print(f"{'Total Weight Loss:':<30}{total_weight_loss:.1f} lbs")
-    print(f"{'Total Body Fat Reduction:':<30}{total_bf_loss:.1f}%")
-    print(f"{'Final Weight:':<30}{final_entry['weight']:.1f} lbs")
-    print(f"{'Final Body Fat:':<30}{final_entry['body_fat_percentage']:.1f}%")
-    print(f"{'Average Weekly Weight Loss:':<30}{total_weight_loss / total_weeks:.1f} lbs")
-    print(f"{'Total Muscle Gain:':<30}{sum(entry['muscle_gain'] for entry in progression):.1f} lbs")
-    print(f"{'Final Daily Calorie Intake:':<30}{final_entry['daily_calorie_intake']:.0f} calories")
-    print(f"{'Final TDEE:':<30}{final_entry['tdee']:.0f} calories")
-    print(f"{'Final Weekly Caloric Output:':<30}{final_entry['weekly_caloric_output']:.1f} calories")
-
-    if final_entry['body_fat_percentage'] <= progression[0]['body_fat_percentage'] + 0.5:
-        print("\n" + "="*60)
-        print("Congratulations! You've reached your body fat percentage goal.".center(60))
-        print("="*60)
-    else:
-        print("\n" + "="*60)
-        print("Note: The plan has concluded, but the body fat percentage goal was not fully reached.".center(60))
-        print("Consider extending the plan duration or adjusting your goals for better results.".center(60))
-        print("="*60)
+def print_summary(progression, initial_data):
+    report = generate_comprehensive_report(progression, initial_data)
+    print(report)
 
 # Function to execute tests for the weight loss predictor
 class TestWeightLossPredictor(unittest.TestCase):
@@ -493,8 +558,8 @@ class TestWeightLossPredictor(unittest.TestCase):
             self.job_activity, self.leisure_activity, self.experience_level, self.is_bodybuilder
         )
         for entry in progression:
-             self.assertGreaterEqual(entry['daily_calorie_intake'], 1000)
+            self.assertGreaterEqual(entry['daily_calorie_intake'], 1000)
 
 if __name__ == "__main__":
-    progression, gender = run_user_interaction()
-    print_summary(progression, gender)
+    progression, initial_data = run_user_interaction()
+    print_summary(progression, initial_data)
