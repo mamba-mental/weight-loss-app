@@ -251,4 +251,5 @@ if st.button("Calculate"):
         st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
         st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
         st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
-        st.write(f"Final TDEE: {progression[-1]['tdee']:.
+        st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
+        st.write(f"Final Weekly Caloric Output: {
