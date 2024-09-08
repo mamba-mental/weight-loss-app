@@ -122,22 +122,36 @@ def generate_pdf(progression, gender, client_name):
 # Main app
 st.title("Weight Loss Predictor")
 
-# Input fields
+# Personal Information Section
+st.header("Personal Information")
 col1, col2 = st.columns(2)
 with col1:
-    client_name = st.text_input("Client Name")
-    current_weight = st.number_input("Current Weight (Lbs)", min_value=0.0)
-    goal_weight = st.number_input("Goal Weight (Lbs)", min_value=0.0)
-    start_date = st.date_input("Start Date", min_value=datetime.now().date())
+    first_name = st.text_input("First Name")
+    last_name = st.text_input("Last Name")
+    email = st.text_input("Email")
     gender = st.selectbox("Gender", ["M", "F"])
-    height = st.number_input("Height (cm)", min_value=0.0)
-    protein_intake = st.number_input("Daily Protein Intake (Grams)", min_value=0.0)
-
 with col2:
+    dob = st.date_input("Date of Birth", min_value=datetime.now().date() - timedelta(days=36500), max_value=datetime.now().date())
+    feet = st.number_input("Height (feet)", min_value=0, max_value=8)
+    inches = st.number_input("Height (inches)", min_value=0, max_value=11)
+    height_cm = (feet * 12 + inches) * 2.54
+
+# Current Stats and Goals Section
+st.header("Current Stats and Goals")
+col1, col2 = st.columns(2)
+with col1:
+    current_weight = st.number_input("Current Weight (lbs)", min_value=0.0)
     current_bf = st.number_input("Current Body Fat %", min_value=0.0, max_value=100.0)
+    start_date = st.date_input("Start Date", min_value=datetime.now().date())
+with col2:
+    goal_weight = st.number_input("Goal Weight (lbs)", min_value=0.0)
     goal_bf = st.number_input("Goal Body Fat %", min_value=0.0, max_value=100.0)
     end_date = st.date_input("End Date", min_value=start_date)
-    dob = st.date_input("Date Of Birth", max_value=datetime.now().date())
+
+# Activity and Training Section
+st.header("Activity and Training")
+col1, col2 = st.columns(2)
+with col1:
     activity_level = st.selectbox("Activity Level", [
         "Little To No Exercise",
         "Light Exercise/Sports 1-3 Days/Week",
@@ -145,27 +159,34 @@ with col2:
         "Hard Exercise/Sports 6-7 Days A Week",
         "Very Hard Exercise/Sports & A Physical Job"
     ])
+    resistance_training = st.checkbox("Doing Resistance Training")
+    is_athlete = st.checkbox("Are You An Athlete")
+with col2:
+    workout_type = st.selectbox("Workout Type", [
+        "Bodybuilding - Focused on muscle building and strength training",
+        "Cardio - Primarily cardiovascular exercises like running or cycling",
+        "General Fitness - A mix of resistance training and cardio"
+    ])
+    workout_days = st.number_input("Workout Days Per Week", min_value=0, max_value=7)
+    protein_intake = st.number_input("Daily Protein Intake (Grams)", min_value=0.0)
 
-resistance_training = st.checkbox("Doing Resistance Training")
-is_athlete = st.checkbox("Are You An Athlete")
-workout_type = st.selectbox("Workout Type", [
-    "Bodybuilding - Focused on muscle building and strength training",
-    "Cardio - Primarily cardiovascular exercises like running or cycling",
-    "General Fitness - A mix of resistance training and cardio"
-])
-workout_days = st.number_input("Workout Days Per Week", min_value=0, max_value=7)
-job_activity = st.selectbox("Job Activity Level", [
-    "Sedentary - Mostly sitting (e.g., desk job)",
-    "Light - Standing or walking for significant periods (e.g., teacher)",
-    "Moderate - Regular physical activity (e.g., retail worker)",
-    "Active - Constant physical activity (e.g., construction worker)"
-])
-leisure_activity = st.selectbox("Leisure Activity Level", [
-    "Sedentary - Little to no physical activity outside of work",
-    "Light - Occasional light activities (e.g., casual walking)",
-    "Moderate - Regular moderate activities (e.g., recreational sports)",
-    "Active - Frequent intense activities (e.g., competitive sports)"
-])
+# Additional Information Section
+st.header("Additional Information")
+col1, col2 = st.columns(2)
+with col1:
+    job_activity = st.selectbox("Job Activity Level", [
+        "Sedentary - Mostly sitting (e.g., desk job)",
+        "Light - Standing or walking for significant periods (e.g., teacher)",
+        "Moderate - Regular physical activity (e.g., retail worker)",
+        "Active - Constant physical activity (e.g., construction worker)"
+    ])
+with col2:
+    leisure_activity = st.selectbox("Leisure Activity Level", [
+        "Sedentary - Little to no physical activity outside of work",
+        "Light - Occasional light activities (e.g., casual walking)",
+        "Moderate - Regular moderate activities (e.g., recreational sports)",
+        "Active - Frequent intense activities (e.g., competitive sports)"
+    ])
 experience_level = st.selectbox("Experience Level", [
     "Beginner (0-1 Year)",
     "Novice (1-2 Years)",
@@ -198,7 +219,7 @@ if st.button("Calculate"):
     progression = predict_weight_loss(
         current_weight, current_bf, goal_weight, goal_bf,
         start_date, end_date, dob, gender.lower(), activity_level_num,
-        height, is_athlete, resistance_training, protein_intake,
+        height_cm, is_athlete, resistance_training, protein_intake,
         volume_score, intensity_score, frequency_score,
         job_activity_lower, leisure_activity_lower, experience_level, is_bodybuilder
     )
@@ -230,6 +251,7 @@ if st.button("Calculate"):
     }))
 
     # Generate PDF
+    client_name = f"{first_name} {last_name}"
     pdf_bytes = generate_pdf(progression, gender.lower(), client_name)
     
     # Create download button
@@ -249,14 +271,4 @@ if st.button("Calculate"):
 
     col1, col2 = st.columns(2)
     with col1:
-        st.write(f"Duration: {total_weeks} weeks")
-        st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
-        st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
-        st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
-        st.write(f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
-    with col2:
-        st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
-        st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
-        st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
-        st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
-        st.write(f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories")
+        st.write
