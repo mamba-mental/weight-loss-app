@@ -6,15 +6,17 @@ from fpdf import FPDF
 import base64
 import io
 
-# Custom CSS for styling
+# Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
+
+# Additional CSS for custom styling
 st.markdown(
     """
     <style>
     body {
         background-color: black;
         color: yellow;
-        font-family: 'Times', serif;
+        font-family: 'Times New Roman', Times, serif;
     }
     </style>
     """,
