@@ -66,95 +66,102 @@ def generate_pdf(progression, initial_data, gender, client_name):
     pdf.add_page()
     pdf.set_font("Times", "", 12)
     pdf.set_text_color(0, 0, 0)  # Black
-    pdf.cell(0, 10, f"Dear {client_name},", 0, 1)
+
+    def safe_cell(w, h, txt, border=0, ln=0, align='', fill=False, link=''):
+        try:
+            pdf.cell(w, h, txt.encode('latin-1', errors='replace').decode('latin-1'), border, ln, align, fill, link)
+        except:
+            pdf.cell(w, h, txt.encode('latin-1', errors='ignore').decode('latin-1'), border, ln, align, fill, link)
+
+    safe_cell(0, 10, f"Dear {client_name},", 0, 1)
     pdf.ln(5)
     pdf.multi_cell(0, 10, "We've analyzed your data using our advanced weight loss prediction model. Here's a comprehensive breakdown of your journey:")
     pdf.ln(5)
 
     # Personal Profile
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "1. PERSONAL PROFILE", 0, 1, "L")
+    safe_cell(0, 10, "1. PERSONAL PROFILE", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
-    pdf.cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
-    pdf.cell(0, 10, f"Age: {calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years", 0, 1)
-    pdf.cell(0, 10, f"Gender: {gender.upper()}", 0, 1)
-    pdf.cell(0, 10, f"Height: {initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)", 0, 1)
-    pdf.cell(0, 10, f"Initial Weight: {progression[0]['weight']:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Goal Weight: {initial_data['goal_weight']:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
-    pdf.cell(0, 10, f"Goal Body Fat: {initial_data['goal_bf']:.1f}%", 0, 1)
-    pdf.cell(0, 10, f"Activity Level: {initial_data['activity_level_description']}", 0, 1)
-    pdf.cell(0, 10, f"Experience Level: {initial_data['experience_level']}", 0, 1)
+    safe_cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
+    safe_cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
+    safe_cell(0, 10, f"Age: {calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years", 0, 1)
+    safe_cell(0, 10, f"Gender: {gender.upper()}", 0, 1)
+    safe_cell(0, 10, f"Height: {initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)", 0, 1)
+    safe_cell(0, 10, f"Initial Weight: {progression[0]['weight']:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Goal Weight: {initial_data['goal_weight']:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
+    safe_cell(0, 10, f"Goal Body Fat: {initial_data['goal_bf']:.1f}%", 0, 1)
+    safe_cell(0, 10, f"Activity Level: {initial_data['activity_level_description']}", 0, 1)
+    safe_cell(0, 10, f"Experience Level: {initial_data['experience_level']}", 0, 1)
 
     # Metabolic Calculations
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "2. METABOLIC CALCULATIONS", 0, 1, "L")
+    safe_cell(0, 10, "2. METABOLIC CALCULATIONS", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Initial Resting Metabolic Rate (RMR): {initial_data['initial_rmr']} calories/day", 0, 1)
-    pdf.cell(0, 10, f"Initial Total Daily Energy Expenditure (TDEE): {initial_data['initial_tdee']} calories/day", 0, 1)
-    pdf.cell(0, 10, f"Thermic Effect of Food (TEF): {initial_data['tef']} calories/day", 0, 1)
-    pdf.cell(0, 10, f"Non-Exercise Activity Thermogenesis (NEAT): {initial_data['neat']} calories/day", 0, 1)
-    pdf.cell(0, 10, f"Initial Daily Calorie Intake: {initial_data['initial_daily_calories']} calories/day", 0, 1)
+    safe_cell(0, 10, f"Initial Resting Metabolic Rate (RMR): {initial_data['initial_rmr']} calories/day", 0, 1)
+    safe_cell(0, 10, f"Initial Total Daily Energy Expenditure (TDEE): {initial_data['initial_tdee']} calories/day", 0, 1)
+    safe_cell(0, 10, f"Thermic Effect of Food (TEF): {initial_data['tef']} calories/day", 0, 1)
+    safe_cell(0, 10, f"Non-Exercise Activity Thermogenesis (NEAT): {initial_data['neat']} calories/day", 0, 1)
+    safe_cell(0, 10, f"Initial Daily Calorie Intake: {initial_data['initial_daily_calories']} calories/day", 0, 1)
 
     # Workout Analysis
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "3. WORKOUT ANALYSIS", 0, 1, "L")
+    safe_cell(0, 10, "3. WORKOUT ANALYSIS", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Workout Type: {initial_data['workout_type']}", 0, 1)
-    pdf.cell(0, 10, f"Workout Frequency: {initial_data['workout_days']} days/week", 0, 1)
-    pdf.cell(0, 10, f"Volume Score: {initial_data['volume_score']}", 0, 1)
-    pdf.cell(0, 10, f"Intensity Score: {initial_data['intensity_score']}", 0, 1)
-    pdf.cell(0, 10, f"Frequency Score: {initial_data['frequency_score']}", 0, 1)
-    pdf.cell(0, 10, f"Resistance Training: {'Yes' if initial_data['resistance_training'] else 'No'}", 0, 1)
-    pdf.cell(0, 10, f"Athlete Status: {'Yes' if initial_data['is_athlete'] else 'No'}", 0, 1)
+    safe_cell(0, 10, f"Workout Type: {initial_data['workout_type']}", 0, 1)
+    safe_cell(0, 10, f"Workout Frequency: {initial_data['workout_days']} days/week", 0, 1)
+    safe_cell(0, 10, f"Volume Score: {initial_data['volume_score']}", 0, 1)
+    safe_cell(0, 10, f"Intensity Score: {initial_data['intensity_score']}", 0, 1)
+    safe_cell(0, 10, f"Frequency Score: {initial_data['frequency_score']}", 0, 1)
+    safe_cell(0, 10, f"Resistance Training: {'Yes' if initial_data['resistance_training'] else 'No'}", 0, 1)
+    safe_cell(0, 10, f"Athlete Status: {'Yes' if initial_data['is_athlete'] else 'No'}", 0, 1)
 
     # Body Composition Adjustments
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "4. BODY COMPOSITION ADJUSTMENTS", 0, 1, "L")
+    safe_cell(0, 10, "4. BODY COMPOSITION ADJUSTMENTS", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Initial Lean Mass: {initial_data['initial_lean_mass']} lbs", 0, 1)
-    pdf.cell(0, 10, f"Initial Fat Mass: {initial_data['initial_fat_mass']} lbs", 0, 1)
-    pdf.cell(0, 10, f"Estimated Weekly Muscle Gain: {initial_data['estimated_muscle_gain']} lbs", 0, 1)
+    safe_cell(0, 10, f"Initial Lean Mass: {initial_data['initial_lean_mass']} lbs", 0, 1)
+    safe_cell(0, 10, f"Initial Fat Mass: {initial_data['initial_fat_mass']} lbs", 0, 1)
+    safe_cell(0, 10, f"Estimated Weekly Muscle Gain: {initial_data['estimated_muscle_gain']} lbs", 0, 1)
 
     # Weekly Progress Summary
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "5. WEEKLY PROGRESS SUMMARY", 0, 1, "C")
+    safe_cell(0, 10, "5. WEEKLY PROGRESS SUMMARY", 0, 1, "C")
     pdf.set_font("Times", "", 10)
 
     col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
     headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
     for i, header in enumerate(headers):
-        pdf.cell(col_widths[i], 10, header, 1)
+        safe_cell(col_widths[i], 10, header, 1)
     pdf.ln()
 
     for i, entry in enumerate(progression):
-        pdf.cell(col_widths[0], 10, str(i), 1)
-        pdf.cell(col_widths[1], 10, entry['date'], 1)
-        pdf.cell(col_widths[2], 10, f"{entry['weight']:.1f}", 1)
-        pdf.cell(col_widths[3], 10, f"{entry['body_fat_percentage']:.1f}", 1)
-        pdf.cell(col_widths[4], 10, f"{entry['daily_calorie_intake']:.0f}", 1)
-        pdf.cell(col_widths[5], 10, f"{entry['tdee']:.0f}", 1)
-        pdf.cell(col_widths[6], 10, f"{entry['weekly_caloric_output']:.1f}", 1)
-        pdf.cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
+        safe_cell(col_widths[0], 10, str(i), 1)
+        safe_cell(col_widths[1], 10, entry['date'], 1)
+        safe_cell(col_widths[2], 10, f"{entry['weight']:.1f}", 1)
+        safe_cell(col_widths[3], 10, f"{entry['body_fat_percentage']:.1f}", 1)
+        safe_cell(col_widths[4], 10, f"{entry['daily_calorie_intake']:.0f}", 1)
+        safe_cell(col_widths[5], 10, f"{entry['tdee']:.0f}", 1)
+        safe_cell(col_widths[6], 10, f"{entry['weekly_caloric_output']:.1f}", 1)
+        safe_cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
         pdf.ln()
 
     # Metabolic Adaptation
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "6. METABOLIC ADAPTATION", 0, 1, "L")
+    safe_cell(0, 10, "6. METABOLIC ADAPTATION", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Week 1 Metabolic Adaptation: {initial_data['week1_adaptation']}", 0, 1)
-    pdf.cell(0, 10, f"Final Week Metabolic Adaptation: {initial_data['final_week_adaptation']}", 0, 1)
+    safe_cell(0, 10, f"Week 1 Metabolic Adaptation: {initial_data['week1_adaptation']}", 0, 1)
+    safe_cell(0, 10, f"Final Week Metabolic Adaptation: {initial_data['final_week_adaptation']}", 0, 1)
 
     # Final Results
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "7. FINAL RESULTS", 0, 1, "C")
+    safe_cell(0, 10, "7. FINAL RESULTS", 0, 1, "C")
     pdf.set_font("Times", "", 12)
 
     total_weeks = len(progression) - 1
@@ -162,33 +169,33 @@ def generate_pdf(progression, initial_data, gender, client_name):
     total_bf_loss = progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']
     total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
 
-    pdf.cell(0, 10, f"Duration: {total_weeks} weeks", 0, 1)
-    pdf.cell(0, 10, f"Total Weight Loss: {total_weight_loss:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Total Body Fat Reduction: {total_bf_loss:.1f}%", 0, 1)
-    pdf.cell(0, 10, f"Final Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
-    pdf.cell(0, 10, f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Total Muscle Gain: {total_muscle_gain:.1f} lbs", 0, 1)
-    pdf.cell(0, 10, f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories", 0, 1)
-    pdf.cell(0, 10, f"Final TDEE: {progression[-1]['tdee']:.0f} calories", 0, 1)
-    pdf.cell(0, 10, f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories", 0, 1)
+    safe_cell(0, 10, f"Duration: {total_weeks} weeks", 0, 1)
+    safe_cell(0, 10, f"Total Weight Loss: {total_weight_loss:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Total Body Fat Reduction: {total_bf_loss:.1f}%", 0, 1)
+    safe_cell(0, 10, f"Final Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
+    safe_cell(0, 10, f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Total Muscle Gain: {total_muscle_gain:.1f} lbs", 0, 1)
+    safe_cell(0, 10, f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories", 0, 1)
+    safe_cell(0, 10, f"Final TDEE: {progression[-1]['tdee']:.0f} calories", 0, 1)
+    safe_cell(0, 10, f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories", 0, 1)
 
     # Body Fat Category Progression
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "8. BODY FAT CATEGORY PROGRESSION", 0, 1, "L")
+    safe_cell(0, 10, "8. BODY FAT CATEGORY PROGRESSION", 0, 1, "L")
     pdf.set_font("Times", "", 12)
-    pdf.cell(0, 10, f"Initial Category: {initial_data['initial_bf_category']}", 0, 1)
-    pdf.cell(0, 10, f"Description: {initial_data['initial_bf_description']}", 0, 1)
-    pdf.cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['initial_sixpack_time']}", 0, 1)
-    pdf.cell(0, 10, f"Final Category: {initial_data['final_bf_category']}", 0, 1)
-    pdf.cell(0, 10, f"Description: {initial_data['final_bf_description']}", 0, 1)
-    pdf.cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['final_sixpack_time']}", 0, 1)
+    safe_cell(0, 10, f"Initial Category: {initial_data['initial_bf_category']}", 0, 1)
+    safe_cell(0, 10, f"Description: {initial_data['initial_bf_description']}", 0, 1)
+    safe_cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['initial_sixpack_time']}", 0, 1)
+    safe_cell(0, 10, f"Final Category: {initial_data['final_bf_category']}", 0, 1)
+    safe_cell(0, 10, f"Description: {initial_data['final_bf_description']}", 0, 1)
+    safe_cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['final_sixpack_time']}", 0, 1)
 
     # Insights and Recommendations
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "9. INSIGHTS AND RECOMMENDATIONS", 0, 1, "L")
+    safe_cell(0, 10, "9. INSIGHTS AND RECOMMENDATIONS", 0, 1, "L")
     pdf.set_font("Times", "", 12)
     pdf.multi_cell(0, 10, f"• Your metabolic rate adapted by {initial_data['adaptation_percentage']}% over the course of your journey.\n"
                            f"• You maintained an impressive {initial_data['lean_mass_preserved']}% of your initial lean mass.\n"
@@ -199,7 +206,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     # Next Steps
     pdf.ln(5)
     pdf.set_font("Times", "B", 14)
-    pdf.cell(0, 10, "10. NEXT STEPS", 0, 1, "L")
+    safe_cell(0, 10, "10. NEXT STEPS", 0, 1, "L")
     pdf.set_font("Times", "", 12)
     pdf.multi_cell(0, 10, f"• {initial_data['personalized_recommendation']}\n"
                            f"• Consider adjusting your protein intake to {initial_data['recommended_protein']} g/day to support lean mass.\n"
@@ -208,7 +215,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     pdf.ln(10)
     pdf.multi_cell(0, 10, "Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!")
 
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='S').encode('latin-1', errors='ignore')
 
 # Main app
 st.title("Weight Loss Predictor")
