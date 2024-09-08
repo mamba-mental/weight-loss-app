@@ -1,3 +1,31 @@
 body {
-    font-family: 'Times New Roman', serif;
+    color: #FFFF00;
+    background-color: #000000;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.stButton > button {
+    color: #000000;
+    background-color: #FFFF00;
+    border-radius: 5px;
+}
+
+.stSelectbox > div > div {
+    color: #FFFF00;
+    background-color: #1A1A1A;
+}
+
+.stTextInput > div > div > input {
+    color: #FFFF00;
+    background-color: #1A1A1A;
+}
+
+.stNumberInput > div > div > input {
+    color: #FFFF00;
+    background-color: #1A1A1A;
+}
+
+.stDateInput > div > div > input {
+    color: #FFFF00;
+    background-color: #1A1A1A;
 }
