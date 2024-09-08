@@ -9,35 +9,12 @@ import io
 # Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 
-# Custom CSS for styling
-st.markdown("""
-<style>
-    body {
-        color: #FFFF00;
-        background-color: #000000;
-    }
-    .stButton > button {
-        color: #000000;
-        background-color: #FFFF00;
-    }
-    .stTextInput > div > div > input {
-        color: #FFFF00;
-        background-color: #1A1A1A;
-    }
-    .stSelectbox > div > div > select {
-        color: #FFFF00;
-        background-color: #1A1A1A;
-    }
-    .stDateInput > div > div > input {
-        color: #FFFF00;
-        background-color: #1A1A1A;
-    }
-    .stNumberInput > div > div > input {
-        color: #FFFF00;
-        background-color: #1A1A1A;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Load custom CSS
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+load_css("styles.css")
 
 # PDF generation function
 class PDF(FPDF):
@@ -271,3 +248,15 @@ if st.button("Calculate"):
     total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
 
     col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"Duration: {total_weeks} weeks")
+        st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
+        st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
+        st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
+        st.write(f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
+    with col2:
+        st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
+        st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
+        st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
+        st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
+        st.write(f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories")
