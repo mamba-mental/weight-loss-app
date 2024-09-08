@@ -308,38 +308,12 @@ if st.button("Calculate"):
     is_bodybuilder = workout_type_simple == "Bodybuilding" and experience_level in ['Intermediate (2-4 Years)', 'Advanced (4-10 Years)', 'Elite (10+ Years)']
 
     progression = predict_weight_loss(
-        current_weight, current_bf, goal_weight, goal_bf,
-        start_date, end_date, dob, gender.lower(), activity_level_num,
-        height_cm, is_athlete, resistance_training, protein_intake,
-        volume_score, intensity_score, frequency_score,
-        job_activity_lower, leisure_activity_lower, experience_level, is_bodybuilder
+        current_weight, current_bf, goal_weight, goal_bf, start_date, end_date,
+        dob, gender.lower(), activity_level_num, height_cm, is_athlete,
+        resistance_training, protein_intake, volume_score, intensity_score,
+        frequency_score, job_activity_lower, leisure_activity_lower,
+        experience_level, is_bodybuilder
     )
-
-    # Display results
-    st.subheader("Weight Loss Plan Input Summary")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"Start Date: {progression[0]['date']}")
-        st.write(f"Initial Weight: {progression[0]['weight']:.1f} lbs")
-        st.write(f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%")
-    with col2:
-        st.write(f"End Date: {progression[-1]['date']}")
-        st.write(f"Goal Weight: {progression[-1]['weight']:.1f} lbs")
-        st.write(f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
-
-    st.subheader("Weekly Progress Summary")
-    df = pd.DataFrame(progression)
-    st.dataframe(df.style.format({
-        'weight': '{:.1f}',
-        'body_fat_percentage': '{:.1f}',
-        'daily_calorie_intake': '{:.0f}',
-        'tdee': '{:.0f}',
-        'weekly_caloric_output': '{:.1f}',
-        'total_weight_lost': '{:.1f}',
-        'lean_mass': '{:.1f}',
-        'fat_mass': '{:.1f}',
-        'muscle_gain': '{:.3f}'
-    }))
 
     # Generate PDF
     client_name = f"{first_name} {last_name}"
@@ -352,7 +326,6 @@ if st.button("Calculate"):
         'goal_bf': goal_bf,
         'activity_level_description': activity_level,
         'experience_level': experience_level,
-        # Add the necessary data for other sections here
         'initial_rmr': 1500,  # Placeholder
         'initial_tdee': 2000,  # Placeholder
         'tef': 200,  # Placeholder
