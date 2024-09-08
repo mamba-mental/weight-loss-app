@@ -14,7 +14,7 @@ st.markdown(
     body {
         background-color: black;
         color: yellow;
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'Times', serif;
     }
     </style>
     """,
@@ -25,26 +25,26 @@ st.markdown(
 class PDF(FPDF):
     def header(self):
         self.set_font('Times', 'B', 15)
-        self.set_text_color(255, 255, 0)  # Yellow text
+        self.set_text_color(255, 255, 0)  # Yellow
         self.cell(0, 10, 'Weight Loss Plan Report', 0, 1, 'C')
         self.ln(10)
 
     def footer(self):
         self.set_y(-15)
         self.set_font('Times', 'I', 8)
-        self.set_text_color(255, 255, 0)  # Yellow text
+        self.set_text_color(255, 255, 0)  # Yellow
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def generate_pdf(progression, gender, client_name):
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Times", "B", 16)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
     pdf.cell(0, 10, f"Weight Loss Plan for {client_name}", 0, 1, "C")
     pdf.ln(10)
 
     pdf.set_font("Times", "", 12)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
     pdf.cell(0, 10, "Weight Loss Plan Input Summary", 0, 1, "L")
     pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
     pdf.cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
@@ -55,10 +55,10 @@ def generate_pdf(progression, gender, client_name):
 
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
     pdf.cell(0, 10, "Weekly Progress Summary", 0, 1, "C")
     pdf.set_font("Times", "", 10)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
 
     col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
     headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
@@ -79,10 +79,10 @@ def generate_pdf(progression, gender, client_name):
 
     pdf.add_page()
     pdf.set_font("Times", "B", 14)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
     pdf.cell(0, 10, "Final Stats and Results Summary", 0, 1, "C")
     pdf.set_font("Times", "", 12)
-    pdf.set_text_color(255, 255, 0)  # Yellow text
+    pdf.set_text_color(255, 255, 0)  # Yellow
 
     total_weeks = len(progression) - 1
     total_weight_loss = progression[0]['weight'] - progression[-1]['weight']
