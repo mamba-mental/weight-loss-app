@@ -9,12 +9,35 @@ import io
 # Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 
-# Load custom CSS
-def load_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-
-load_css("styles.css")
+# Custom CSS
+st.markdown("""
+    <style>
+    body {
+        color: #FFFF00;
+        background-color: #000000;
+    }
+    .stButton > button {
+        color: #000000;
+        background-color: #FFFF00;
+    }
+    .stSelectbox > div > div {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stTextInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stNumberInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stDateInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # PDF generation function
 class PDF(FPDF):
