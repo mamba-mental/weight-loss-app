@@ -1,3 +1,60 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info, estimate_tef, estimate_neat, calculate_metabolic_adaptation
+from fpdf import FPDF
+
+# Function to calculate age
+def calculate_age(dob, current_date):
+    return current_date.year - dob.year - ((current_date.month, current_date.day) < (dob.month, dob.day))
+
+# Set page configuration
+st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
+
+# Custom CSS
+st.markdown("""
+    <style>
+    body {
+        color: #FFFF00;
+        background-color: #000000;
+    }
+    .stButton > button {
+        color: #000000;
+        background-color: #FFFF00;
+    }
+    .stSelectbox > div > div {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stTextInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stNumberInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    .stDateInput > div > div > input {
+        color: #FFFF00;
+        background-color: #1A1A1A;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# PDF generation function
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Times', 'B', 15)
+        self.set_text_color(0, 0, 0)  # Black
+        self.cell(0, 10, 'Weight Loss Plan Report', 0, 1, 'C')
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Times', 'I', 8)
+        self.set_text_color(0, 0, 0)  # Black
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
 def generate_pdf(progression, initial_data, gender, client_name):
     pdf = PDF()
     pdf.add_page()
@@ -157,3 +214,31 @@ def generate_pdf(progression, initial_data, gender, client_name):
     pdf.cell(0, 10, "======================================================", 0, 1, "C")
 
     return pdf.output(dest='S').encode('latin-1')
+
+# Main app
+st.title("Weight Loss Predictor")
+
+# Personal Information Section
+st.header("Personal Information")
+col1, col2 = st.columns(2)
+with col1:
+    first_name = st.text_input("First Name")
+    last_name = st.text_input("Last Name")
+    email = st.text_input("Email")
+    gender = st.selectbox("Gender", ["M", "F"])
+with col2:
+    dob = st.date_input("Date of Birth", min_value=datetime.now().date() - timedelta(days=36500), max_value=datetime.now().date())
+    feet = st.number_input("Height (feet)", min_value=0, max_value=8)
+    inches = st.number_input("Height (inches)", min_value=0, max_value=11)
+    height_cm = (feet * 12 + inches) * 2.54
+
+# Current Stats and Goals Section
+st.header("Current Stats and Goals")
+col1, col2 = st.columns(2)
+with col1:
+    current_weight = st.number_input("Current Weight (lbs)", min_value=0.0)
+    current_bf = st.number_input("Current Body Fat %", min_value=0.0, max_value=100.0)
+    start_date = st.date_input("Start Date", min_value=datetime.now().date())
+with col2:
+    goal_weight = st.number_input("Goal Weight (lbs)", min_value=0.0)
+    goal_bf = st.number_input("Goal Body Fat %", min_value=0.0, max_value=100.0)
