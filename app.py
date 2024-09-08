@@ -7,16 +7,24 @@ import base64
 import io
 
 # Custom CSS for styling
+st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 st.markdown("""
     <style>
     .stApp {
-        font-family: Garamond, serif !important;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .stHeader {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+    .stSubheader {
+        color: #4a4a4a;
+        font-size: 1.5rem;
     }
     .stDataFrame {
-        font-size: 12px;
-    }
-    .stMarkdown {
-        line-height: 1.2;
+        font-size: 0.8rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -34,14 +42,25 @@ def date_input(label):
     return None
 
 # PDF generation function
-def generate_pdf(progression, gender):
-    pdf = FPDF()
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 15)
+        self.cell(0, 10, 'Weight Loss Plan Report', 0, 1, 'C')
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+def generate_pdf(progression, gender, client_name):
+    pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "Weight Loss Plan Summary", 0, 1, "C")
-    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Weight Loss Plan for {client_name}", 0, 1, "C")
+    pdf.ln(10)
     
-    # Input Summary
+    pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, "Weight Loss Plan Input Summary", 0, 1, "L")
     pdf.cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
     pdf.cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
@@ -50,13 +69,12 @@ def generate_pdf(progression, gender):
     pdf.cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
     pdf.cell(0, 10, f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
     
-    # Weekly Progress Summary
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Weekly Progress Summary", 0, 1, "C")
     pdf.set_font("Arial", "", 10)
     
-    col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
+    col_widths = [15, 20, 25, 25, 25, 25, 30, 30]
     headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
     
     for i, header in enumerate(headers):
@@ -74,7 +92,6 @@ def generate_pdf(progression, gender):
         pdf.cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
         pdf.ln()
     
-    # Final Stats
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Final Stats and Results Summary", 0, 1, "C")
@@ -102,25 +119,31 @@ def generate_pdf(progression, gender):
 st.title("Weight Loss Predictor")
 
 # Input fields
-current_weight = st.number_input("Current Weight (Lbs)", min_value=0.0)
-current_bf = st.number_input("Current Body Fat %", min_value=0.0, max_value=100.0)
-goal_weight = st.number_input("Goal Weight (Lbs)", min_value=0.0)
-goal_bf = st.number_input("Goal Body Fat %", min_value=0.0, max_value=100.0)
-start_date = date_input("Start Date (MMDDYY)")
-end_date = date_input("End Date (MMDDYY)")
-dob = date_input("Date Of Birth (MMDDYY)")
-gender = st.selectbox("Gender", ["M", "F"])
-height_feet = st.number_input("Height (Feet)", min_value=0, max_value=10)
-height_inches = st.number_input("Height (Inches)", min_value=0, max_value=11)
+col1, col2 = st.columns(2)
+with col1:
+    client_name = st.text_input("Client Name")
+    current_weight = st.number_input("Current Weight (Lbs)", min_value=0.0)
+    goal_weight = st.number_input("Goal Weight (Lbs)", min_value=0.0)
+    start_date = date_input("Start Date (MMDDYY)")
+    gender = st.selectbox("Gender", ["M", "F"])
+    height_feet = st.number_input("Height (Feet)", min_value=0, max_value=10)
+    protein_intake = st.number_input("Daily Protein Intake (Grams)", min_value=0.0)
+
+with col2:
+    current_bf = st.number_input("Current Body Fat %", min_value=0.0, max_value=100.0)
+    goal_bf = st.number_input("Goal Body Fat %", min_value=0.0, max_value=100.0)
+    end_date = date_input("End Date (MMDDYY)")
+    dob = date_input("Date Of Birth (MMDDYY)")
+    height_inches = st.number_input("Height (Inches)", min_value=0, max_value=11)
+    activity_level = st.selectbox("Activity Level", [
+        "Little To No Exercise",
+        "Light Exercise/Sports 1-3 Days/Week",
+        "Moderate Exercise/Sports 3-5 Days/Week",
+        "Hard Exercise/Sports 6-7 Days A Week",
+        "Very Hard Exercise/Sports & A Physical Job"
+    ])
+
 height_cm = (height_feet * 12 + height_inches) * 2.54
-protein_intake = st.number_input("Daily Protein Intake (Grams)", min_value=0.0)
-activity_level = st.selectbox("Activity Level", [
-    "Little To No Exercise",
-    "Light Exercise/Sports 1-3 Days/Week",
-    "Moderate Exercise/Sports 3-5 Days/Week",
-    "Hard Exercise/Sports 6-7 Days A Week",
-    "Very Hard Exercise/Sports & A Physical Job"
-])
 resistance_training = st.checkbox("Doing Resistance Training")
 is_athlete = st.checkbox("Are You An Athlete")
 workout_type = st.selectbox("Workout Type", [
@@ -181,25 +204,38 @@ if st.button("Calculate"):
 
         # Display results
         st.subheader("Weight Loss Plan Input Summary")
-        st.write(f"Start Date: {progression[0]['date']}")
-        st.write(f"End Date: {progression[-1]['date']}")
-        st.write(f"Initial Weight: {progression[0]['weight']:.1f} lbs")
-        st.write(f"Goal Weight: {progression[-1]['weight']:.1f} lbs")
-        st.write(f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%")
-        st.write(f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"Start Date: {progression[0]['date']}")
+            st.write(f"Initial Weight: {progression[0]['weight']:.1f} lbs")
+            st.write(f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%")
+        with col2:
+            st.write(f"End Date: {progression[-1]['date']}")
+            st.write(f"Goal Weight: {progression[-1]['weight']:.1f} lbs")
+            st.write(f"Goal Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
 
         st.subheader("Weekly Progress Summary")
         df = pd.DataFrame(progression)
-        st.dataframe(df)
+        st.dataframe(df.style.format({
+            'weight': '{:.1f}',
+            'body_fat_percentage': '{:.1f}',
+            'daily_calorie_intake': '{:.0f}',
+            'tdee': '{:.0f}',
+            'weekly_caloric_output': '{:.1f}',
+            'total_weight_lost': '{:.1f}',
+            'lean_mass': '{:.1f}',
+            'fat_mass': '{:.1f}',
+            'muscle_gain': '{:.3f}'
+        }))
 
         # Generate PDF
-        pdf_bytes = generate_pdf(progression, gender.lower())
+        pdf_bytes = generate_pdf(progression, gender.lower(), client_name)
         
         # Create download button
         st.download_button(
             label="Download PDF Report",
             data=pdf_bytes,
-            file_name="weight_loss_plan.pdf",
+            file_name=f"{client_name}_weight_loss_plan.pdf",
             mime="application/pdf"
         )
 
@@ -210,20 +246,16 @@ if st.button("Calculate"):
         total_bf_loss = progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']
         total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
 
-        st.write(f"Duration: {total_weeks} weeks")
-        st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
-        st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
-        st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
-        st.write(f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
-        st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
-        st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
-        st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
-        st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
-        st.write(f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories")
-
-        if progression[-1]['body_fat_percentage'] <= progression[0]['body_fat_percentage'] + 0.5:
-            st.success("Congratulations! You've reached your body fat percentage goal.")
-        else:
-            st.warning("Note: The plan has concluded, but the body fat percentage goal was not fully reached. Consider extending the plan duration or adjusting your goals for better results.")
-    else:
-        st.error("Please enter all required dates to calculate the weight loss progression.")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"Duration: {total_weeks} weeks")
+            st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
+            st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
+            st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
+            st.write(f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
+        with col2:
+            st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
+            st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
+            st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
+            st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
+            st
