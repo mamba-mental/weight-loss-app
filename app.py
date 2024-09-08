@@ -9,6 +9,20 @@ import io
 # Set page configuration
 st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 
+# Custom CSS for styling
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: black;
+        color: yellow;
+        font-family: 'Times New Roman', Times, serif;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # PDF generation function
 class PDF(FPDF):
     def header(self):
