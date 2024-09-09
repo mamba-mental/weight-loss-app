@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info
+from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info, estimate_tef, estimate_neat, calculate_metabolic_adaptation
 from fpdf import FPDF
 
 # Function to calculate age
@@ -322,6 +322,11 @@ if st.button("Calculate"):
         experience_level, is_bodybuilder
     )
 
+    # Calculate initial RMR and TDEE
+    initial_rmr = progression[0]['rmr']
+    initial_tdee = progression[0]['tdee']
+    initial_daily_calories = progression[0]['daily_calorie_intake']
+
     # Generate PDF
     client_name = f"{first_name} {last_name}"
     pdf_bytes = generate_pdf(progression, {
@@ -333,11 +338,11 @@ if st.button("Calculate"):
         'goal_bf': goal_bf,
         'activity_level_description': activity_level,
         'experience_level': experience_level,
-        'initial_rmr': 1500,  # Placeholder
-        'initial_tdee': 2000,  # Placeholder
-        'tef': 200,  # Placeholder
-        'neat': 300,  # Placeholder
-        'initial_daily_calories': 2500,  # Placeholder
+        'initial_rmr': initial_rmr,
+        'initial_tdee': initial_tdee,
+        'tef': estimate_tef(protein_intake),
+        'neat': estimate_neat(job_activity_lower, leisure_activity_lower),
+        'initial_daily_calories': initial_daily_calories,
         'workout_type': workout_type,
         'workout_days': workout_days,
         'volume_score': volume_score,
@@ -345,25 +350,25 @@ if st.button("Calculate"):
         'frequency_score': frequency_score,
         'resistance_training': resistance_training,
         'is_athlete': is_athlete,
-        'initial_lean_mass': 130,  # Placeholder
-        'initial_fat_mass': 30,  # Placeholder
-        'estimated_muscle_gain': 1,  # Placeholder
-        'week1_adaptation': 'Minimal',  # Placeholder
-        'final_week_adaptation': 'Moderate',  # Placeholder
-        'initial_bf_category': 'Overweight',  # Placeholder
-        'initial_bf_description': 'Above average body fat.',  # Placeholder
-        'initial_sixpack_time': '12 weeks',  # Placeholder
-        'final_bf_category': 'Fit',  # Placeholder
-        'final_bf_description': 'In the fit range.',  # Placeholder
-        'final_sixpack_time': '8 weeks',  # Placeholder
-        'adaptation_percentage': 15,  # Placeholder
-        'lean_mass_preserved': 95,  # Placeholder
-        'avg_muscle_gain': 0.5,  # Placeholder
-        'muscle_gain_assessment': 'Excellent',  # Placeholder
-        'maintenance_calories': 2500,  # Placeholder
-        'personalized_recommendation': 'Increase resistance training to maximize muscle gain.',  # Placeholder
-        'recommended_protein': 150,  # Placeholder
-        'next_goal_suggestion': 'Reduce body fat to 10%',  # Placeholder
+        'initial_lean_mass': progression[0]['lean_mass'],
+        'initial_fat_mass': progression[0]['fat_mass'],
+        'estimated_muscle_gain': progression[0]['muscle_gain'],
+        'week1_adaptation': calculate_metabolic_adaptation(1, progression[0]['body_fat_percentage'], is_bodybuilder),
+        'final_week_adaptation': calculate_metabolic_adaptation(len(progression)-1, progression[-1]['body_fat_percentage'], is_bodybuilder),
+        'initial_bf_category': get_body_fat_info(gender.lower(), progression[0]['body_fat_percentage'])[0],
+        'initial_bf_description': get_body_fat_info(gender.lower(), progression[0]['body_fat_percentage'])[2],
+        'initial_sixpack_time': get_body_fat_info(gender.lower(), progression[0]['body_fat_percentage'])[1],
+        'final_bf_category': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[0],
+        'final_bf_description': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[2],
+        'final_sixpack_time': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[1],
+        'adaptation_percentage': (1 - progression[-1]['tdee'] / progression[0]['tdee']) * 100,
+        'lean_mass_preserved': (progression[-1]['lean_mass'] / progression[0]['lean_mass']) * 100,
+        'avg_muscle_gain': sum(entry['muscle_gain'] for entry in progression) / len(progression),
+        'muscle_gain_assessment': 'Excellent' if sum(entry['muscle_gain'] for entry in progression) / len(progression) > 0.5 else 'Good' if sum(entry['muscle_gain'] for entry in progression) / len(progression) > 0.25 else 'Moderate',
+        'maintenance_calories': progression[-1]['tdee'],
+        'personalized_recommendation': 'Increase resistance training to maximize muscle gain.' if not resistance_training else 'Continue with your current plan.',
+        'recommended_protein': progression[-1]['weight'] * 0.8,
+        'next_goal_suggestion': f"Reduce body fat to {max(progression[-1]['body_fat_percentage'] - 2, 5):.1f}%",
     }, gender.lower(), client_name)
 
     # Create download button
