@@ -20,31 +20,37 @@ st.set_page_config(page_title="Weight Loss Predictor", layout="wide")
 st.markdown("""
     <style>
     body {
-        color: #FFFF00;
+        color: #FFFFFF;
         background-color: #000000;
     }
     .stButton > button {
         color: #000000;
-        background-color: #FFFF00;
+        background-color: #FFFFFF;
     }
     .stSelectbox > div > div {
-        color: #FFFF00;
+        color: #FFFFFF;
         background-color: #1A1A1A;
     }
     .stTextInput > div > div > input {
-        color: #FFFF00;
+        color: #FFFFFF;
         background-color: #1A1A1A;
     }
     .stNumberInput > div > div > input {
-        color: #FFFF00;
+        color: #FFFFFF;
         background-color: #1A1A1A;
     }
     .stDateInput > div > div > input {
-        color: #FFFF00;
+        color: #FFFFFF;
         background-color: #1A1A1A;
     }
+    .streamlit-expanderHeader {
+        color: #FFFFFF;
+    }
+    p, .stMarkdown {
+        color: #FFFFFF;
+    }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # PDF generation function using ReportLab
 def generate_pdf(progression, report_data, gender, client_name):
