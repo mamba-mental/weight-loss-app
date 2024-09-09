@@ -177,31 +177,46 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
     initial_weight = current_weight
     initial_bf = current_bf
 
-    for week in range(weeks + 1):
+    # Add initial entry
+    age = calculate_age(dob, start_date)
+    rmr = calculate_rmr(current_weight, age, gender, height_cm, is_athlete)
+    tdee = calculate_tdee(current_weight, age, gender, activity_level, height_cm, is_athlete, daily_protein_intake, job_activity, leisure_activity)
+    initial_daily_calorie_intake = calculate_initial_daily_calories(tdee, rmr)
+    
+    progression.append({
+        'date': start_date.strftime("%m%d%y"),
+        'weight': current_weight,
+        'body_fat_percentage': current_bf,
+        'daily_calorie_intake': initial_daily_calorie_intake,
+        'tdee': tdee,
+        'weekly_caloric_output': 0,
+        'total_weight_lost': 0,
+        'lean_mass': current_weight * (1 - current_bf / 100),
+        'fat_mass': current_weight * (current_bf / 100),
+        'muscle_gain': 0,
+        'rmr': rmr
+    })
+
+    for week in range(1, weeks + 1):
         age = calculate_age(dob, start_date + datetime.timedelta(weeks=week))
-        rmr = calculate_rmr(current_weight, age, gender, height_cm, is_athlete)  # Add this line
+        rmr = calculate_rmr(current_weight, age, gender, height_cm, is_athlete)
         tdee = calculate_tdee(current_weight, age, gender, activity_level, height_cm, is_athlete, daily_protein_intake, job_activity, leisure_activity)
         metabolic_adaptation = calculate_metabolic_adaptation(week, current_bf, is_bodybuilder)
         adapted_tdee = tdee * metabolic_adaptation
 
-        if week == 0:
-            daily_calorie_intake = calculate_initial_daily_calories(adapted_tdee, rmr)
-        else:
-            remaining_weeks = max(1, weeks - week)
-            current_fat_mass = current_weight * (current_bf / 100)
-            current_lean_mass = current_weight - current_fat_mass
-            goal_fat_mass = (goal_bf / 100) * current_lean_mass / (1 - (goal_bf / 100))
-            remaining_fat_to_lose = max(current_fat_mass - goal_fat_mass, 0)
-            weekly_fat_loss_required = remaining_fat_to_lose / remaining_weeks
-            weekly_deficit_required = weekly_fat_loss_required * 3500
-
-            daily_deficit_required = weekly_deficit_required / 7
-            min_calories = max(adapted_tdee / 3, 1000) # Ensure not below 1/3 of TDEE or 1000 calories
-            daily_calorie_intake = max(adapted_tdee - daily_deficit_required, min_calories)
+        remaining_weeks = max(1, weeks - week)
+        current_fat_mass = current_weight * (current_bf / 100)
+        current_lean_mass = current_weight - current_fat_mass
+        goal_fat_mass = (goal_bf / 100) * current_lean_mass / (1 - (goal_bf / 100))
+        remaining_fat_to_lose = max(current_fat_mass - goal_fat_mass, 0)
+        weekly_fat_loss_required = remaining_fat_to_lose / remaining_weeks
+        weekly_deficit_required = weekly_fat_loss_required * 3500
+        daily_deficit_required = weekly_deficit_required / 7
+        min_calories = max(adapted_tdee / 3, 1000)  # Ensure not below 1/3 of TDEE or 1000 calories
+        daily_calorie_intake = max(adapted_tdee - daily_deficit_required, min_calories)
 
         weekly_caloric_output = calculate_weekly_caloric_output(adapted_tdee, daily_calorie_intake)
         weekly_weight_loss = weekly_caloric_output / 3500
-
         fat_loss, lean_loss = distribute_weight_loss(weekly_weight_loss, current_bf, resistance_training, daily_protein_intake, current_weight, goal_bf, is_bodybuilder)
 
         if resistance_training:
@@ -213,7 +228,6 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
         current_lean_mass = max(current_weight * (1 - current_bf / 100) - lean_loss + muscle_gain, current_weight * 0.05)
         current_weight = current_fat_mass + current_lean_mass
         current_bf = (current_fat_mass / current_weight) * 100
-
         total_weight_lost = initial_weight - current_weight
 
         progression.append({
@@ -227,9 +241,9 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
             'lean_mass': current_lean_mass,
             'fat_mass': current_fat_mass,
             'muscle_gain': muscle_gain,
-            'rmr': rmr  # Add this line
+            'rmr': rmr
         })
-        
+
         if current_bf <= goal_bf and current_weight <= goal_weight:
             break
 
