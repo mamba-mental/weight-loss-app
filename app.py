@@ -47,7 +47,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # PDF generation function using ReportLab
-def generate_pdf(progression, initial_data, gender, client_name):
+def generate_pdf(progression, report_data, gender, client_name):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
@@ -61,19 +61,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Personal Profile
     story.append(Paragraph("1. PERSONAL PROFILE", styles['Heading2']))
-    data = [
-        ["Start Date", progression[0]['date']],
-        ["End Date", progression[-1]['date']],
-        ["Age", f"{calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years"],
-        ["Gender", gender.upper()],
-        ["Height", f"{initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)"],
-        ["Initial Weight", f"{progression[0]['weight']:.1f} lbs"],
-        ["Goal Weight", f"{initial_data['goal_weight']:.1f} lbs"],
-        ["Initial Body Fat", f"{progression[0]['body_fat_percentage']:.1f}%"],
-        ["Goal Body Fat", f"{initial_data['goal_bf']:.1f}%"],
-        ["Activity Level", initial_data['activity_level_description']],
-        ["Experience Level", initial_data['experience_level']]
-    ]
+    data = [[key, value] for key, value in report_data['personal_profile'].items()]
     t = Table(data)
     t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -94,13 +82,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
 
     # Metabolic Calculations
     story.append(Paragraph("2. METABOLIC CALCULATIONS", styles['Heading2']))
-    data = [
-        ["Initial Resting Metabolic Rate (RMR)", f"{initial_data['initial_rmr']} calories/day"],
-        ["Initial Total Daily Energy Expenditure (TDEE)", f"{initial_data['initial_tdee']} calories/day"],
-        ["Thermic Effect of Food (TEF)", f"{initial_data['tef']} calories/day"],
-        ["Non-Exercise Activity Thermogenesis (NEAT)", f"{initial_data['neat']} calories/day"],
-        ["Initial Daily Calorie Intake", f"{initial_data['initial_daily_calories']} calories/day"]
-    ]
+    data = [[key, value] for key, value in report_data['metabolic_calculations'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -123,15 +105,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Workout Analysis
     story.append(Paragraph("3. WORKOUT ANALYSIS", styles['Heading2']))
-    data = [
-        ["Workout Type", initial_data['workout_type']],
-        ["Workout Frequency", f"{initial_data['workout_days']} days/week"],
-        ["Volume Score", initial_data['volume_score']],
-        ["Intensity Score", initial_data['intensity_score']],
-        ["Frequency Score", initial_data['frequency_score']],
-        ["Resistance Training", "Yes" if initial_data['resistance_training'] else "No"],
-        ["Athlete Status", "Yes" if initial_data['is_athlete'] else "No"]
-    ]
+    data = [[key, value] for key, value in report_data['workout_analysis'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -154,11 +128,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
 
     # Body Composition Adjustments
     story.append(Paragraph("4. BODY COMPOSITION ADJUSTMENTS", styles['Heading2']))
-    data = [
-        ["Initial Lean Mass", f"{initial_data['initial_lean_mass']} lbs"],
-        ["Initial Fat Mass", f"{initial_data['initial_fat_mass']} lbs"],
-        ["Estimated Weekly Muscle Gain", f"{initial_data['estimated_muscle_gain']} lbs"]
-    ]
+    data = [[key, value] for key, value in report_data['body_composition'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -182,7 +152,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     # Weekly Progress Summary
     story.append(Paragraph("5. WEEKLY PROGRESS SUMMARY", styles['Heading2']))
     data = [
-        ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
+        ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Caloric Output", "Total Weight Lost"]
     ]
     for i, entry in enumerate(progression):
         data.append([str(i), entry['date'], f"{entry['weight']:.1f}", f"{entry['body_fat_percentage']:.1f}", f"{entry['daily_calorie_intake']:.0f}", f"{entry['tdee']:.0f}", f"{entry['weekly_caloric_output']:.1f}", f"{entry['total_weight_lost']:.1f}"])
@@ -209,10 +179,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Metabolic Adaptation
     story.append(Paragraph("6. METABOLIC ADAPTATION", styles['Heading2']))
-    data = [
-        ["Week 1 Metabolic Adaptation", initial_data['week1_adaptation']],
-        ["Final Week Metabolic Adaptation", initial_data['final_week_adaptation']]
-    ]
+    data = [[key, value] for key, value in report_data['metabolic_adaptation'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -235,18 +202,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Final Results
     story.append(Paragraph("7. FINAL RESULTS", styles['Heading2']))
-    data = [
-        ["Duration", f"{len(progression) - 1} weeks"],
-        ["Total Weight Loss", f"{progression[0]['weight'] - progression[-1]['weight']:.1f} lbs"],
-        ["Total Body Fat Reduction", f"{progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']:.1f}%"],
-        ["Final Weight", f"{progression[-1]['weight']:.1f} lbs"],
-        ["Final Body Fat", f"{progression[-1]['body_fat_percentage']:.1f}%"],
-        ["Average Weekly Weight Loss", f"{(progression[0]['weight'] - progression[-1]['weight']) / (len(progression) - 1):.1f} lbs"],
-        ["Total Muscle Gain", f"{sum(entry['muscle_gain'] for entry in progression):.1f} lbs"],
-        ["Final Daily Calorie Intake", f"{progression[-1]['daily_calorie_intake']:.0f} calories"],
-        ["Final TDEE", f"{progression[-1]['tdee']:.0f} calories"],
-        ["Final Weekly Caloric Output", f"{progression[-1]['weekly_caloric_output']:.1f} calories"]
-    ]
+    data = [[key, value] for key, value in report_data['final_results'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -269,14 +225,7 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Body Fat Category Progression
     story.append(Paragraph("8. BODY FAT CATEGORY PROGRESSION", styles['Heading2']))
-    data = [
-        ["Initial Category", initial_data['initial_bf_category']],
-        ["Description", initial_data['initial_bf_description']],
-        ["Estimated Time to Six-Pack", initial_data['initial_sixpack_time']],
-        ["Final Category", initial_data['final_bf_category']],
-        ["Description", initial_data['final_bf_description']],
-        ["Estimated Time to Six-Pack", initial_data['final_sixpack_time']]
-    ]
+    data = [[key, value] for key, value in report_data['body_fat_category'].items()]
     t = Table(data)
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -299,25 +248,13 @@ def generate_pdf(progression, initial_data, gender, client_name):
     
     # Insights and Recommendations
     story.append(Paragraph("9. INSIGHTS AND RECOMMENDATIONS", styles['Heading2']))
-    recommendations = [
-        f"• Your metabolic rate adapted by {initial_data['adaptation_percentage']}% over the course of your journey.",
-        f"• You maintained an impressive {initial_data['lean_mass_preserved']}% of your initial lean mass.",
-        f"• Your muscle gain rate averaged {initial_data['avg_muscle_gain']} lbs per week, which is {initial_data['muscle_gain_assessment']}.",
-        f"• Based on your final body fat percentage, you're now in the {initial_data['final_bf_category']} category.",
-        f"• To maintain your results, consider a daily calorie intake of {initial_data['maintenance_calories']} calories."
-    ]
-    for recommendation in recommendations:
+    for recommendation in report_data['insights_recommendations']:
         story.append(Paragraph(recommendation, styles['Justify']))
     story.append(Spacer(1, 12))
     
     # Next Steps
     story.append(Paragraph("10. NEXT STEPS", styles['Heading2']))
-    next_steps = [
-        f"• {initial_data['personalized_recommendation']}",
-        f"• Consider adjusting your protein intake to {initial_data['recommended_protein']} g/day to support lean mass.",
-        f"• Your next ideal body composition goal could be {initial_data['next_goal_suggestion']}."
-    ]
-    for step in next_steps:
+    for step in report_data['next_steps']:
         story.append(Paragraph(step, styles['Justify']))
     
     story.append(Spacer(1, 12))
@@ -328,6 +265,93 @@ def generate_pdf(progression, initial_data, gender, client_name):
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
+
+# Function to generate the comprehensive report data
+def generate_report_data(progression, initial_data, gender):
+    initial_entry = progression[0]
+    final_entry = progression[-1]
+    total_weeks = len(progression) - 1
+    total_weight_loss = initial_entry['weight'] - final_entry['weight']
+    total_bf_loss = initial_entry['body_fat_percentage'] - final_entry['body_fat_percentage']
+    avg_weekly_loss = total_weight_loss / total_weeks
+    total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
+    adaptation_percentage = (1 - final_entry['tdee'] / initial_entry['tdee']) * 100
+    lean_mass_preserved = (final_entry['lean_mass'] / initial_entry['lean_mass']) * 100
+    avg_muscle_gain = total_muscle_gain / total_weeks
+
+    report_data = {
+        "personal_profile": {
+            "Start Date": initial_entry['date'],
+            "End Date": final_entry['date'],
+            "Age": calculate_age(initial_data['dob'], datetime.strptime(initial_entry['date'], '%m%d%y')),
+            "Gender": gender.upper(),
+            "Height": f"{initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)",
+            "Initial Weight": f"{initial_entry['weight']:.1f} lbs",
+            "Goal Weight": f"{initial_data['goal_weight']:.1f} lbs",
+            "Initial Body Fat": f"{initial_entry['body_fat_percentage']:.1f}%",
+            "Goal Body Fat": f"{initial_data['goal_bf']:.1f}%",
+            "Activity Level": initial_data['activity_level_description'],
+            "Experience Level": initial_data['experience_level']
+        },
+        "metabolic_calculations": {
+            "Initial RMR": f"{initial_data['initial_rmr']:.0f} calories/day",
+            "Initial TDEE": f"{initial_data['initial_tdee']:.0f} calories/day",
+            "TEF": f"{initial_data['tef']:.0f} calories/day",
+            "NEAT": f"{initial_data['neat']:.0f} calories/day",
+            "Initial Daily Calorie Intake": f"{initial_data['initial_daily_calories']:.0f} calories/day"
+        },
+        "workout_analysis": {
+            "Workout Type": initial_data['workout_type'],
+            "Workout Frequency": f"{initial_data['workout_days']} days/week",
+            "Volume Score": f"{initial_data['volume_score']:.2f}",
+            "Intensity Score": f"{initial_data['intensity_score']:.2f}",
+            "Frequency Score": f"{initial_data['frequency_score']:.2f}",
+            "Resistance Training": "Yes" if initial_data['resistance_training'] else "No",
+            "Athlete Status": "Yes" if initial_data['is_athlete'] else "No"
+        },
+        "body_composition": {
+            "Initial Lean Mass": f"{initial_data['initial_lean_mass']:.1f} lbs",
+            "Initial Fat Mass": f"{initial_data['initial_fat_mass']:.1f} lbs",
+            "Estimated Weekly Muscle Gain": f"{initial_data['estimated_muscle_gain']:.3f} lbs"
+        },
+        "metabolic_adaptation": {
+            "Week 1 Metabolic Adaptation": f"{initial_data['week1_adaptation']:.2f}",
+            "Final Week Metabolic Adaptation": f"{initial_data['final_week_adaptation']:.2f}"
+        },
+        "final_results": {
+            "Duration": f"{total_weeks} weeks",
+            "Total Weight Loss": f"{total_weight_loss:.1f} lbs",
+            "Total Body Fat Reduction": f"{total_bf_loss:.1f}%",
+            "Final Weight": f"{final_entry['weight']:.1f} lbs",
+            "Final Body Fat": f"{final_entry['body_fat_percentage']:.1f}%",
+            "Average Weekly Weight Loss": f"{avg_weekly_loss:.2f} lbs",
+            "Total Muscle Gain": f"{total_muscle_gain:.1f} lbs",
+            "Final Daily Calorie Intake": f"{final_entry['daily_calorie_intake']:.0f} calories",
+            "Final TDEE": f"{final_entry['tdee']:.0f} calories",
+            "Final Weekly Caloric Output": f"{final_entry['weekly_caloric_output']:.1f} calories"
+        },
+        "body_fat_category": {
+            "Initial Category": initial_data['initial_bf_category'],
+            "Description": initial_data['initial_bf_description'],
+            "Estimated Time to Six-Pack": initial_data['initial_sixpack_time'],
+            "Final Category": initial_data['final_bf_category'],
+            "Description": initial_data['final_bf_description'],
+            "Estimated Time to Six-Pack": initial_data['final_sixpack_time']
+        },
+        "insights_recommendations": [
+            f"Your metabolic rate adapted by {adaptation_percentage:.1f}% over the course of your journey.",
+            f"You maintained an impressive {lean_mass_preserved:.1f}% of your initial lean mass.",
+            f"Your muscle gain rate averaged {avg_muscle_gain:.3f} lbs per week, which is {'excellent' if avg_muscle_gain > 0.5 else 'good' if avg_muscle_gain > 0.25 else 'moderate'}.",
+            f"Based on your final body fat percentage, you're now in the {initial_data['final_bf_category']} category.",
+            f"To maintain your results, consider a daily calorie intake of {final_entry['tdee']:.0f} calories."
+        ],
+        "next_steps": [
+            initial_data['personalized_recommendation'],
+            f"Consider adjusting your protein intake to {final_entry['weight'] * 0.8:.0f} g/day to support lean mass.",
+            f"Your next ideal body composition goal could be {max(final_entry['body_fat_percentage'] - 2, 5):.1f}% body fat."
+        ]
+    }
+    return report_data
 
 # Main app
 st.title("Weight Loss Predictor")
@@ -439,9 +463,8 @@ if st.button("Calculate"):
     initial_tdee = progression[0]['tdee']
     initial_daily_calories = progression[0]['daily_calorie_intake']
 
-    # Generate PDF
-    client_name = f"{first_name} {last_name}"
-    pdf_bytes = generate_pdf(progression, {
+    # Generate report data
+    report_data = generate_report_data(progression, {
         'dob': dob,
         'height_feet': feet,
         'height_inches': inches,
@@ -473,15 +496,57 @@ if st.button("Calculate"):
         'final_bf_category': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[0],
         'final_bf_description': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[2],
         'final_sixpack_time': get_body_fat_info(gender.lower(), progression[-1]['body_fat_percentage'])[1],
-        'adaptation_percentage': (1 - progression[-1]['tdee'] / progression[0]['tdee']) * 100,
-        'lean_mass_preserved': (progression[-1]['lean_mass'] / progression[0]['lean_mass']) * 100,
-        'avg_muscle_gain': sum(entry['muscle_gain'] for entry in progression) / len(progression),
-        'muscle_gain_assessment': 'Excellent' if sum(entry['muscle_gain'] for entry in progression) / len(progression) > 0.5 else 'Good' if sum(entry['muscle_gain'] for entry in progression) / len(progression) > 0.25 else 'Moderate',
-        'maintenance_calories': progression[-1]['tdee'],
         'personalized_recommendation': 'Increase resistance training to maximize muscle gain.' if not resistance_training else 'Continue with your current plan.',
-        'recommended_protein': progression[-1]['weight'] * 0.8,
-        'next_goal_suggestion': f"Reduce body fat to {max(progression[-1]['body_fat_percentage'] - 2, 5):.1f}%",
-    }, gender.lower(), client_name)
+    }, gender.lower())
+
+    # Display results
+    st.header("Your Personalized Weight Loss Journey Report")
+
+    st.subheader("1. Personal Profile")
+    for key, value in report_data['personal_profile'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("2. Metabolic Calculations")
+    for key, value in report_data['metabolic_calculations'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("3. Workout Analysis")
+    for key, value in report_data['workout_analysis'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("4. Body Composition Adjustments")
+    for key, value in report_data['body_composition'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("5. Weekly Progress Summary")
+    progress_df = pd.DataFrame(progression)
+    st.dataframe(progress_df)
+
+    st.subheader("6. Metabolic Adaptation")
+    for key, value in report_data['metabolic_adaptation'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("7. Final Results")
+    for key, value in report_data['final_results'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("8. Body Fat Category Progression")
+    for key, value in report_data['body_fat_category'].items():
+        st.write(f"{key}: {value}")
+
+    st.subheader("9. Insights and Recommendations")
+    for insight in report_data['insights_recommendations']:
+        st.write(f"• {insight}")
+
+    st.subheader("10. Next Steps")
+    for step in report_data['next_steps']:
+        st.write(f"• {step}")
+
+    st.write("Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!")
+
+    # Generate PDF
+    client_name = f"{first_name} {last_name}"
+    pdf_bytes = generate_pdf(progression, report_data, gender.lower(), client_name)
 
     # Create download button
     st.download_button(
@@ -490,24 +555,3 @@ if st.button("Calculate"):
         file_name=f"{client_name}_weight_loss_plan.pdf",
         mime="application/pdf"
     )
-
-    # Final stats
-    st.subheader("Final Stats and Results Summary")
-    total_weeks = len(progression) - 1
-    total_weight_loss = progression[0]['weight'] - progression[-1]['weight']
-    total_bf_loss = progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']
-    total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"Duration: {total_weeks} weeks")
-        st.write(f"Total Weight Loss: {total_weight_loss:.1f} lbs")
-        st.write(f"Total Body Fat Reduction: {total_bf_loss:.1f}%")
-        st.write(f"Final Weight: {progression[-1]['weight']:.1f} lbs")
-        st.write(f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%")
-    with col2:
-        st.write(f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs")
-        st.write(f"Total Muscle Gain: {total_muscle_gain:.1f} lbs")
-        st.write(f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories")
-        st.write(f"Final TDEE: {progression[-1]['tdee']:.0f} calories")
-        st.write(f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories")
