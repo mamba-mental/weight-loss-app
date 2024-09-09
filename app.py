@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info, estimate_tef, estimate_neat, calculate_metabolic_adaptation
-from fpdf import FPDF
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from io import BytesIO
 
 # Function to calculate age
 def calculate_age(dob, current_date):
@@ -41,181 +46,288 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# PDF generation function
-class PDF(FPDF):
-    def header(self):
-        self.set_font('Times', 'B', 15)
-        self.set_text_color(0, 0, 0)  # Black
-        self.cell(0, 10, '======================================================', 0, 1, 'C')
-        self.cell(0, 10, 'YOUR PERSONALIZED', 0, 1, 'C')
-        self.cell(0, 10, 'WEIGHT LOSS JOURNEY REPORT', 0, 1, 'C')
-        self.cell(0, 10, '======================================================', 0, 1, 'C')
-        self.ln(10)
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Times', 'I', 8)
-        self.set_text_color(0, 0, 0)  # Black
-        self.cell(0, 10, '======================================================', 0, 1, 'C')
-        self.cell(0, 10, 'Powered by Advanced AI Analytics', 0, 1, 'C')
-        self.cell(0, 10, '======================================================', 0, 1, 'C')
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-
+# PDF generation function using ReportLab
 def generate_pdf(progression, initial_data, gender, client_name):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font("Times", "", 12)
-    pdf.set_text_color(0, 0, 0)  # Black
-
-    def safe_cell(w, h, txt, border=0, ln=0, align='', fill=False, link=''):
-        try:
-            pdf.cell(w, h, txt.encode('latin-1', errors='replace').decode('latin-1'), border, ln, align, fill, link)
-        except:
-            pdf.cell(w, h, txt.encode('latin-1', errors='ignore').decode('latin-1'), border, ln, align, fill, link)
-
-    safe_cell(0, 10, f"Dear {client_name},", 0, 1)
-    pdf.ln(5)
-    pdf.multi_cell(0, 10, "We've analyzed your data using our advanced weight loss prediction model. Here's a comprehensive breakdown of your journey:")
-    pdf.ln(5)
-
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Justify', alignment=1))
+    
+    story = []
+    
+    # Title
+    story.append(Paragraph("YOUR PERSONALIZED WEIGHT LOSS JOURNEY REPORT", styles['Heading1']))
+    story.append(Spacer(1, 12))
+    
     # Personal Profile
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "1. PERSONAL PROFILE", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Start Date: {progression[0]['date']}", 0, 1)
-    safe_cell(0, 10, f"End Date: {progression[-1]['date']}", 0, 1)
-    safe_cell(0, 10, f"Age: {calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years", 0, 1)
-    safe_cell(0, 10, f"Gender: {gender.upper()}", 0, 1)
-    safe_cell(0, 10, f"Height: {initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)", 0, 1)
-    safe_cell(0, 10, f"Initial Weight: {progression[0]['weight']:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Goal Weight: {initial_data['goal_weight']:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Initial Body Fat: {progression[0]['body_fat_percentage']:.1f}%", 0, 1)
-    safe_cell(0, 10, f"Goal Body Fat: {initial_data['goal_bf']:.1f}%", 0, 1)
-    safe_cell(0, 10, f"Activity Level: {initial_data['activity_level_description']}", 0, 1)
-    safe_cell(0, 10, f"Experience Level: {initial_data['experience_level']}", 0, 1)
+    story.append(Paragraph("1. PERSONAL PROFILE", styles['Heading2']))
+    data = [
+        ["Start Date", progression[0]['date']],
+        ["End Date", progression[-1]['date']],
+        ["Age", f"{calculate_age(initial_data['dob'], datetime.strptime(progression[0]['date'], '%m%d%y'))} years"],
+        ["Gender", gender.upper()],
+        ["Height", f"{initial_data['height_feet']}'{initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)"],
+        ["Initial Weight", f"{progression[0]['weight']:.1f} lbs"],
+        ["Goal Weight", f"{initial_data['goal_weight']:.1f} lbs"],
+        ["Initial Body Fat", f"{progression[0]['body_fat_percentage']:.1f}%"],
+        ["Goal Body Fat", f"{initial_data['goal_bf']:.1f}%"],
+        ["Activity Level", initial_data['activity_level_description']],
+        ["Experience Level", initial_data['experience_level']]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                           ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                           ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                           ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                           ('FONTSIZE', (0, 0), (-1, 0), 14),
+                           ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                           ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                           ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                           ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                           ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                           ('FONTSIZE', (0, 0), (-1, -1), 12),
+                           ('TOPPADDING', (0, 0), (-1, -1), 6),
+                           ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                           ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+    story.append(t)
+    story.append(Spacer(1, 12))
 
     # Metabolic Calculations
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "2. METABOLIC CALCULATIONS", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Initial Resting Metabolic Rate (RMR): {initial_data['initial_rmr']} calories/day", 0, 1)
-    safe_cell(0, 10, f"Initial Total Daily Energy Expenditure (TDEE): {initial_data['initial_tdee']} calories/day", 0, 1)
-    safe_cell(0, 10, f"Thermic Effect of Food (TEF): {initial_data['tef']} calories/day", 0, 1)
-    safe_cell(0, 10, f"Non-Exercise Activity Thermogenesis (NEAT): {initial_data['neat']} calories/day", 0, 1)
-    safe_cell(0, 10, f"Initial Daily Calorie Intake: {initial_data['initial_daily_calories']} calories/day", 0, 1)
-
+    story.append(Paragraph("2. METABOLIC CALCULATIONS", styles['Heading2']))
+    data = [
+        ["Initial Resting Metabolic Rate (RMR)", f"{initial_data['initial_rmr']} calories/day"],
+        ["Initial Total Daily Energy Expenditure (TDEE)", f"{initial_data['initial_tdee']} calories/day"],
+        ["Thermic Effect of Food (TEF)", f"{initial_data['tef']} calories/day"],
+        ["Non-Exercise Activity Thermogenesis (NEAT)", f"{initial_data['neat']} calories/day"],
+        ["Initial Daily Calorie Intake", f"{initial_data['initial_daily_calories']} calories/day"]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Workout Analysis
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "3. WORKOUT ANALYSIS", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Workout Type: {initial_data['workout_type']}", 0, 1)
-    safe_cell(0, 10, f"Workout Frequency: {initial_data['workout_days']} days/week", 0, 1)
-    safe_cell(0, 10, f"Volume Score: {initial_data['volume_score']}", 0, 1)
-    safe_cell(0, 10, f"Intensity Score: {initial_data['intensity_score']}", 0, 1)
-    safe_cell(0, 10, f"Frequency Score: {initial_data['frequency_score']}", 0, 1)
-    safe_cell(0, 10, f"Resistance Training: {'Yes' if initial_data['resistance_training'] else 'No'}", 0, 1)
-    safe_cell(0, 10, f"Athlete Status: {'Yes' if initial_data['is_athlete'] else 'No'}", 0, 1)
+    story.append(Paragraph("3. WORKOUT ANALYSIS", styles['Heading2']))
+    data = [
+        ["Workout Type", initial_data['workout_type']],
+        ["Workout Frequency", f"{initial_data['workout_days']} days/week"],
+        ["Volume Score", initial_data['volume_score']],
+        ["Intensity Score", initial_data['intensity_score']],
+        ["Frequency Score", initial_data['frequency_score']],
+        ["Resistance Training", "Yes" if initial_data['resistance_training'] else "No"],
+        ["Athlete Status", "Yes" if initial_data['is_athlete'] else "No"]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
 
     # Body Composition Adjustments
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "4. BODY COMPOSITION ADJUSTMENTS", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Initial Lean Mass: {initial_data['initial_lean_mass']} lbs", 0, 1)
-    safe_cell(0, 10, f"Initial Fat Mass: {initial_data['initial_fat_mass']} lbs", 0, 1)
-    safe_cell(0, 10, f"Estimated Weekly Muscle Gain: {initial_data['estimated_muscle_gain']} lbs", 0, 1)
-
+    story.append(Paragraph("4. BODY COMPOSITION ADJUSTMENTS", styles['Heading2']))
+    data = [
+        ["Initial Lean Mass", f"{initial_data['initial_lean_mass']} lbs"],
+        ["Initial Fat Mass", f"{initial_data['initial_fat_mass']} lbs"],
+        ["Estimated Weekly Muscle Gain", f"{initial_data['estimated_muscle_gain']} lbs"]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Weekly Progress Summary
-    pdf.add_page()
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "5. WEEKLY PROGRESS SUMMARY", 0, 1, "C")
-    pdf.set_font("Times", "", 10)
-
-    col_widths = [10, 20, 25, 25, 25, 25, 30, 30]
-    headers = ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
-    for i, header in enumerate(headers):
-        safe_cell(col_widths[i], 10, header, 1)
-    pdf.ln()
-
+    story.append(Paragraph("5. WEEKLY PROGRESS SUMMARY", styles['Heading2']))
+    data = [
+        ["Week", "Date", "Weight (lbs)", "Body Fat %", "Daily Calories", "TDEE", "Weekly Cal Output", "Total Weight Lost"]
+    ]
     for i, entry in enumerate(progression):
-        safe_cell(col_widths[0], 10, str(i), 1)
-        safe_cell(col_widths[1], 10, entry['date'], 1)
-        safe_cell(col_widths[2], 10, f"{entry['weight']:.1f}", 1)
-        safe_cell(col_widths[3], 10, f"{entry['body_fat_percentage']:.1f}", 1)
-        safe_cell(col_widths[4], 10, f"{entry['daily_calorie_intake']:.0f}", 1)
-        safe_cell(col_widths[5], 10, f"{entry['tdee']:.0f}", 1)
-        safe_cell(col_widths[6], 10, f"{entry['weekly_caloric_output']:.1f}", 1)
-        safe_cell(col_widths[7], 10, f"{entry['total_weight_lost']:.1f}", 1)
-        pdf.ln()
-
+        data.append([str(i), entry['date'], f"{entry['weight']:.1f}", f"{entry['body_fat_percentage']:.1f}", f"{entry['daily_calorie_intake']:.0f}", f"{entry['tdee']:.0f}", f"{entry['weekly_caloric_output']:.1f}", f"{entry['total_weight_lost']:.1f}"])
+    
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Metabolic Adaptation
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "6. METABOLIC ADAPTATION", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Week 1 Metabolic Adaptation: {initial_data['week1_adaptation']}", 0, 1)
-    safe_cell(0, 10, f"Final Week Metabolic Adaptation: {initial_data['final_week_adaptation']}", 0, 1)
-
+    story.append(Paragraph("6. METABOLIC ADAPTATION", styles['Heading2']))
+    data = [
+        ["Week 1 Metabolic Adaptation", initial_data['week1_adaptation']],
+        ["Final Week Metabolic Adaptation", initial_data['final_week_adaptation']]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Final Results
-    pdf.add_page()
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "7. FINAL RESULTS", 0, 1, "C")
-    pdf.set_font("Times", "", 12)
-
-    total_weeks = len(progression) - 1
-    total_weight_loss = progression[0]['weight'] - progression[-1]['weight']
-    total_bf_loss = progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']
-    total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
-
-    safe_cell(0, 10, f"Duration: {total_weeks} weeks", 0, 1)
-    safe_cell(0, 10, f"Total Weight Loss: {total_weight_loss:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Total Body Fat Reduction: {total_bf_loss:.1f}%", 0, 1)
-    safe_cell(0, 10, f"Final Weight: {progression[-1]['weight']:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Final Body Fat: {progression[-1]['body_fat_percentage']:.1f}%", 0, 1)
-    safe_cell(0, 10, f"Average Weekly Weight Loss: {total_weight_loss / total_weeks:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Total Muscle Gain: {total_muscle_gain:.1f} lbs", 0, 1)
-    safe_cell(0, 10, f"Final Daily Calorie Intake: {progression[-1]['daily_calorie_intake']:.0f} calories", 0, 1)
-    safe_cell(0, 10, f"Final TDEE: {progression[-1]['tdee']:.0f} calories", 0, 1)
-    safe_cell(0, 10, f"Final Weekly Caloric Output: {progression[-1]['weekly_caloric_output']:.1f} calories", 0, 1)
-
+    story.append(Paragraph("7. FINAL RESULTS", styles['Heading2']))
+    data = [
+        ["Duration", f"{len(progression) - 1} weeks"],
+        ["Total Weight Loss", f"{progression[0]['weight'] - progression[-1]['weight']:.1f} lbs"],
+        ["Total Body Fat Reduction", f"{progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage']:.1f}%"],
+        ["Final Weight", f"{progression[-1]['weight']:.1f} lbs"],
+        ["Final Body Fat", f"{progression[-1]['body_fat_percentage']:.1f}%"],
+        ["Average Weekly Weight Loss", f"{(progression[0]['weight'] - progression[-1]['weight']) / (len(progression) - 1):.1f} lbs"],
+        ["Total Muscle Gain", f"{sum(entry['muscle_gain'] for entry in progression):.1f} lbs"],
+        ["Final Daily Calorie Intake", f"{progression[-1]['daily_calorie_intake']:.0f} calories"],
+        ["Final TDEE", f"{progression[-1]['tdee']:.0f} calories"],
+        ["Final Weekly Caloric Output", f"{progression[-1]['weekly_caloric_output']:.1f} calories"]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Body Fat Category Progression
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "8. BODY FAT CATEGORY PROGRESSION", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    safe_cell(0, 10, f"Initial Category: {initial_data['initial_bf_category']}", 0, 1)
-    safe_cell(0, 10, f"Description: {initial_data['initial_bf_description']}", 0, 1)
-    safe_cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['initial_sixpack_time']}", 0, 1)
-    safe_cell(0, 10, f"Final Category: {initial_data['final_bf_category']}", 0, 1)
-    safe_cell(0, 10, f"Description: {initial_data['final_bf_description']}", 0, 1)
-    safe_cell(0, 10, f"Estimated Time to Six-Pack: {initial_data['final_sixpack_time']}", 0, 1)
-
+    story.append(Paragraph("8. BODY FAT CATEGORY PROGRESSION", styles['Heading2']))
+    data = [
+        ["Initial Category", initial_data['initial_bf_category']],
+        ["Description", initial_data['initial_bf_description']],
+        ["Estimated Time to Six-Pack", initial_data['initial_sixpack_time']],
+        ["Final Category", initial_data['final_bf_category']],
+        ["Description", initial_data['final_bf_description']],
+        ["Estimated Time to Six-Pack", initial_data['final_sixpack_time']]
+    ]
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+    
     # Insights and Recommendations
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "9. INSIGHTS AND RECOMMENDATIONS", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    pdf.multi_cell(0, 10, f"• Your metabolic rate adapted by {initial_data['adaptation_percentage']}% over the course of your journey.\n"
-                           f"• You maintained an impressive {initial_data['lean_mass_preserved']}% of your initial lean mass.\n"
-                           f"• Your muscle gain rate averaged {initial_data['avg_muscle_gain']} lbs per week, which is {initial_data['muscle_gain_assessment']}.\n"
-                           f"• Based on your final body fat percentage, you're now in the {initial_data['final_bf_category']} category.\n"
-                           f"• To maintain your results, consider a daily calorie intake of {initial_data['maintenance_calories']} calories.")
-
+    story.append(Paragraph("9. INSIGHTS AND RECOMMENDATIONS", styles['Heading2']))
+    recommendations = [
+        f"• Your metabolic rate adapted by {initial_data['adaptation_percentage']}% over the course of your journey.",
+        f"• You maintained an impressive {initial_data['lean_mass_preserved']}% of your initial lean mass.",
+        f"• Your muscle gain rate averaged {initial_data['avg_muscle_gain']} lbs per week, which is {initial_data['muscle_gain_assessment']}.",
+        f"• Based on your final body fat percentage, you're now in the {initial_data['final_bf_category']} category.",
+        f"• To maintain your results, consider a daily calorie intake of {initial_data['maintenance_calories']} calories."
+    ]
+    for recommendation in recommendations:
+        story.append(Paragraph(recommendation, styles['Justify']))
+    story.append(Spacer(1, 12))
+    
     # Next Steps
-    pdf.ln(5)
-    pdf.set_font("Times", "B", 14)
-    safe_cell(0, 10, "10. NEXT STEPS", 0, 1, "L")
-    pdf.set_font("Times", "", 12)
-    pdf.multi_cell(0, 10, f"• {initial_data['personalized_recommendation']}\n"
-                           f"• Consider adjusting your protein intake to {initial_data['recommended_protein']} g/day to support lean mass.\n"
-                           f"• Your next ideal body composition goal could be {initial_data['next_goal_suggestion']}.")
-
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, "Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!")
-
-    return pdf.output(dest='S').encode('latin-1', errors='ignore')
+    story.append(Paragraph("10. NEXT STEPS", styles['Heading2']))
+    next_steps = [
+        f"• {initial_data['personalized_recommendation']}",
+        f"• Consider adjusting your protein intake to {initial_data['recommended_protein']} g/day to support lean mass.",
+        f"• Your next ideal body composition goal could be {initial_data['next_goal_suggestion']}."
+    ]
+    for step in next_steps:
+        story.append(Paragraph(step, styles['Justify']))
+    
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!", styles['Justify']))
+    
+    # Build the PDF
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
 
 # Main app
 st.title("Weight Loss Predictor")
