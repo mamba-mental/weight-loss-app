@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info
+from .grimore_test import predict_weight_loss, calculate_lean_mass_preservation_scores, get_body_fat_info
 from fpdf import FPDF
 
 # Function to calculate age
